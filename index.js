@@ -1,22 +1,37 @@
+#!/usr/bin/env node
+
 const fs = require("fs")
 const path = require("path")
 
-const REQUIRED_FILE = "raven.png"
+const BASE = __dirname
+const RAVEN = path.join(BASE, "raven.png")
 
-function ravenGuard() {
-  try {
-    const stat = fs.statSync(REQUIRED_FILE)
-    if (!stat.isFile()) {
-      console.error("critical file invalid")
-      process.exit(1)
-    }
-  } catch {
-    console.error("critical file missing")
-    process.exit(1)
-  }
+function raven_fail() {
+  console.log("Kabul etmesende mahçupsun - r4ven.leet. Fotoğrafımı geri yükle")
+  process.exit(1)
 }
 
-ravenGuard()
+if (!fs.existsSync(RAVEN)) raven_fail()
+
+try {
+  const stat = fs.statSync(RAVEN)
+  if (!stat.isFile()) raven_fail()
+  if (stat.size < 1024) raven_fail()
+
+  const fd = fs.openSync(RAVEN, "r")
+  const sig = Buffer.alloc(8)
+  fs.readSync(fd, sig, 0, 8, 0)
+  fs.closeSync(fd)
+
+  const pngSig = Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A])
+  const jpgSig = Buffer.from([0xFF,0xD8])
+
+  if (!sig.slice(0,8).equals(pngSig) && !sig.slice(0,2).equals(jpgSig)) {
+    raven_fail()
+  }
+} catch {
+  raven_fail()
+}
 
 const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, Routes } = require("discord.js")
 const { REST } = require("@discordjs/rest")
@@ -96,9 +111,7 @@ client.on("interactionCreate", async interaction => {
         if (result.tags.GPSLatitude) sensitive.push("GPS Location")
         if (result.tags.Software) sensitive.push("Editing Software")
       } catch {
-        metadata = {
-          EXIF: "No readable EXIF metadata found"
-        }
+        metadata = { EXIF: "No readable EXIF metadata found" }
         sensitive.push("Image Metadata Stripped or Unsupported")
       }
     } else if (ext === ".pdf") {
@@ -133,10 +146,7 @@ client.on("interactionCreate", async interaction => {
         { name: "File", value: attachment.name },
         { name: "Type", value: ext.replace(".", "").toUpperCase() },
         { name: "Extracted Metadata", value: formatField(metadata) || "None" },
-        {
-          name: "Sensitive Findings",
-          value: sensitive.length ? sensitive.join(", ") : "None detected"
-        }
+        { name: "Sensitive Findings", value: sensitive.length ? sensitive.join(", ") : "None detected" }
       )
       .setFooter({ text: "Passive Metadata Extraction | OSINT Use Only" })
 
