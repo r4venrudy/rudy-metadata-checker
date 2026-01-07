@@ -1,7 +1,25 @@
-const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, Routes } = require("discord.js")
-const { REST } = require("@discordjs/rest")
 const fs = require("fs")
 const path = require("path")
+
+const REQUIRED_FILE = "raven.png"
+
+function ravenGuard() {
+  try {
+    const stat = fs.statSync(REQUIRED_FILE)
+    if (!stat.isFile()) {
+      console.error("critical file invalid")
+      process.exit(1)
+    }
+  } catch {
+    console.error("critical file missing")
+    process.exit(1)
+  }
+}
+
+ravenGuard()
+
+const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, Routes } = require("discord.js")
+const { REST } = require("@discordjs/rest")
 const axios = require("axios")
 const exif = require("exif-parser")
 const pdfParse = require("pdf-parse")
