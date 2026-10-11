@@ -35,7 +35,7 @@ cd rudy-metadata-checker
 npm install
 ```
 
-Set the `TOKEN` and `CLIENT_ID` placeholders in your local `index.js`, then start the bot:
+Set the `DISCORD_TOKEN` and `CLIENT_ID` environment variables, then start the bot:
 
 ```bash
 node index.js
@@ -46,7 +46,7 @@ Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a 
 ## Implementation notes
 
 - DOCX core properties are not extracted. The displayed modification time belongs to the temporary download, not the original document. Mammoth is imported but unused.
-- The PDF path calls `pdfParse(buffer)` while the manifest declares `pdf-parse` v2. Validate parser/API compatibility before relying on PDF results.
+- The PDF path uses the `pdf-parse` v2 `PDFParse.getInfo()` API and destroys its worker after use. An offline PDF fixture checks document information extraction.
 - The code downloads the complete attachment and writes a temporary file, which is removed in `finally`. Download timeout is 15 seconds; no explicit file-size limit is implemented.
 - Replies are channel-visible and may contain GPS coordinates or author names. A missing EXIF result can mean unsupported parsing or no readable metadata; it does not prove deliberate stripping.
 - This documentation is based on source inspection; authenticated Discord and parser integrations require live validation.
@@ -58,6 +58,22 @@ index.js       Attachment handling, parser branches and Discord command
 package.json   Discord, HTTP and metadata dependencies
 raven.png      Required startup asset
 ```
+
+## GitHub package
+
+A non-root container is published to GitHub Packages after build and offline configuration checks. Credentials are supplied at runtime and are excluded from the image.
+
+```sh
+cp .env.example .env
+# Fill in your own values in .env, keeping that file private.
+docker run --rm --env-file .env ghcr.io/r4venrudy/rudy-metadata-checker:latest --check-config
+docker run --rm --env-file .env ghcr.io/r4venrudy/rudy-metadata-checker:latest
+```
+
+`--check-config` validates installed dependencies, the bundled asset, and required settings without connecting to Discord. `RUDY_CONFIG` optionally points to a mounted JSON configuration file; environment variables take priority.
+
+Only public project files are packaged. Image tags are `latest` and `sha-<full commit SHA>`. Discord login and external API behavior still require your own account configuration; CI never uses live credentials.
+
 
 ## License
 
