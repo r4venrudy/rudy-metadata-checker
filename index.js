@@ -83,6 +83,17 @@ client.on("interactionCreate", async interaction => {
 
   const attachment = interaction.options.getAttachment("file")
   const ext = path.extname(attachment.name).toLowerCase()
+
+  const SUPPORTED = [".jpg", ".jpeg", ".png", ".pdf", ".docx"]
+  const MAX_BYTES = 25 * 1024 * 1024
+  if (!SUPPORTED.includes(ext)) {
+    await interaction.editReply(`❌ Unsupported file type. Use one of: ${SUPPORTED.join(", ")}`)
+    return
+  }
+  if (attachment.size > MAX_BYTES) {
+    await interaction.editReply("❌ File is larger than 25 MB.")
+    return
+  }
   const tempPath = `./tmp_${Date.now()}${ext}`
 
   try {
