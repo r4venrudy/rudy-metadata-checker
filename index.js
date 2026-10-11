@@ -37,11 +37,12 @@ const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, Routes } =
 const { REST } = require("@discordjs/rest")
 const axios = require("axios")
 const exif = require("exif-parser")
-const pdfParse = require("pdf-parse")
+const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const mammoth = require("mammoth")
 
-const TOKEN = "DISCORD BOT TOKEN HERE"
-const CLIENT_ID = "DISCORD BOT CLIENT ID HERE"
+const { loadConfig } = require('./packaging/config.cjs')
+const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
+if (process.argv.includes('--check-config')) { console.log('Configuration and dependencies ready'); process.exit(0) }
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -94,7 +95,7 @@ client.on("interactionCreate", async interaction => {
     await interaction.editReply("❌ File is larger than 25 MB.")
     return
   }
-  const tempPath = `./tmp_${Date.now()}${ext}`
+  const tempPath = path.join(require("node:os").tmpdir(), `rudy_${require("node:crypto").randomUUID()}${ext}`)
 
   try {
     const res = await axios.get(attachment.url, { responseType: "arraybuffer", timeout: 15000 })
@@ -126,7 +127,7 @@ client.on("interactionCreate", async interaction => {
         sensitive.push("Image Metadata Stripped or Unsupported")
       }
     } else if (ext === ".pdf") {
-      const pdf = await pdfParse(buffer)
+      const pdf = { info: await pdfInfo(buffer) }
 
       metadata = {
         Author: pdf.info?.Author || "N/A",
