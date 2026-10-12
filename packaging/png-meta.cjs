@@ -3,6 +3,18 @@
 const zlib = require('node:zlib');
 const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+// XMP is an RDF/XML packet; pull out the handful of fields people care about instead of dumping the XML.
+function xmpSummary(xml) {
+  const grab = re => { const m = xml.match(re); return m ? m[1].trim().slice(0, 200) : null; };
+  const fields = {
+    Title: grab(/<dc:title>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/),
+    Author: grab(/<pdf:Author>([^<]+)<\/pdf:Author>/) || grab(/<dc:creator>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/),
+    Software: grab(/<xmp:CreatorTool>([^<]+)<\/xmp:CreatorTool>/),
+    Created: grab(/<xmp:CreateDate>([^<]+)<\/xmp:CreateDate>/)
+  };
+  return Object.fromEntries(Object.entries(fields).filter(([, v]) => v));
+}
+
 function pngTextChunks(buffer) {
   if (!buffer.subarray(0, 8).equals(PNG_SIG)) throw new Error('Not a PNG file');
   const out = {};
@@ -26,7 +38,8 @@ function pngTextChunks(buffer) {
           const text = data.subarray(transEnd + 1);
           value = (compressed ? zlib.inflateSync(text) : text).toString('utf8');
         }
-        out[key] = value.trim().slice(0, 200);
+        if (key === 'XML:com.adobe.xmp') Object.assign(out, xmpSummary(value));
+        else out[key] = value.trim().slice(0, 200);
       }
     }
     if (type === 'IEND') break;
@@ -44,4 +57,4 @@ function pngMetadata(buffer) {
   return { metadata, sensitive };
 }
 
-module.exports = { pngMetadata, pngTextChunks };
+module.exports = { pngMetadata, pngTextChunks, xmpSummary };

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const zlib = require('node:zlib');
-const { pngMetadata } = require('./png-meta.cjs');
+const { pngMetadata, xmpSummary } = require('./png-meta.cjs');
 
 function chunk(type, data) {
   const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
@@ -29,4 +29,13 @@ test('PNG without text chunks', () => {
 
 test('rejects non-PNG data', () => {
   assert.throws(() => pngMetadata(Buffer.from('nope')), /Not a PNG/);
+});
+
+test('summarizes XMP packets instead of dumping XML', () => {
+  const xmp = `<x:xmpmeta><rdf:RDF><rdf:Description><dc:title><rdf:Alt><rdf:li xml:lang='x-default'>Poster v2</rdf:li></rdf:Alt></dc:title></rdf:Description>
+    <rdf:Description><pdf:Author>Test Author</pdf:Author></rdf:Description>
+    <rdf:Description><xmp:CreatorTool>Canva</xmp:CreatorTool></rdf:Description></rdf:RDF></x:xmpmeta>`;
+  assert.deepStrictEqual(xmpSummary(xmp), { Title: 'Poster v2', Author: 'Test Author', Software: 'Canva' });
+  const buf = png(chunk('iTXt', Buffer.from(`XML:com.adobe.xmp\0\0\0\0\0${xmp}`, 'utf8')));
+  assert.deepStrictEqual(pngMetadata(buf).sensitive, ['Author Name', 'Editing Software']);
 });
