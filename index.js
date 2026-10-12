@@ -79,7 +79,7 @@ client.on("interactionCreate", async interaction => {
   await interaction.deferReply()
 
   const attachment = interaction.options.getAttachment("file")
-  const ext = path.extname(attachment.name).toLowerCase()
+  let ext = path.extname(attachment.name).toLowerCase()
 
   const SUPPORTED = [".jpg", ".jpeg", ".png", ".pdf", ".docx"]
   const MAX_BYTES = 25 * 1024 * 1024
@@ -95,6 +95,15 @@ client.on("interactionCreate", async interaction => {
   try {
     const res = await axios.get(attachment.url, { responseType: "arraybuffer", timeout: 15000 })
     const buffer = Buffer.from(res.data)
+
+    // Trust the file's magic bytes over its name, so a renamed .png sent as .jpg still parses
+    const sniffed = buffer.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ? ".png"
+      : buffer[0] === 0xff && buffer[1] === 0xd8 ? ".jpg"
+      : buffer.subarray(0, 5).toString("latin1") === "%PDF-" ? ".pdf"
+      : buffer.subarray(0, 2).toString("latin1") === "PK" && ext === ".docx" ? ".docx"
+      : null
+    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, PDF or DOCX file")
+    ext = sniffed
 
     let metadata = {}
     let sensitive = []
