@@ -41,6 +41,7 @@ const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
 const { pngMetadata, xmpSummary } = require("./packaging/png-meta.cjs")
 const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
+const { formatField } = require("./packaging/format.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
@@ -65,13 +66,6 @@ const rest = new REST({ version: "10" }).setToken(TOKEN)
 
 async function registerCommands() {
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands })
-}
-
-function formatField(obj) {
-  return Object.entries(obj)
-    .map(([k, v]) => `• ${k}: ${v}`)
-    .join("\n")
-    .slice(0, 1024)
 }
 
 client.once("ready", () => {
