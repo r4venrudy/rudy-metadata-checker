@@ -40,7 +40,6 @@ const exif = require("exif-parser")
 const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
-const mammoth = require("mammoth")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
