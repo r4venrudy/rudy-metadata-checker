@@ -40,6 +40,7 @@ const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
 const { pngMetadata } = require("./packaging/png-meta.cjs")
+const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
@@ -117,17 +118,7 @@ client.on("interactionCreate", async interaction => {
         metadata = { EXIF: "No readable EXIF metadata found (stripped or unsupported)" }
       }
     } else if (ext === ".pdf") {
-      const pdf = { info: await pdfInfo(buffer) }
-
-      metadata = {
-        Author: pdf.info?.Author || "N/A",
-        Creator: pdf.info?.Creator || "N/A",
-        Producer: pdf.info?.Producer || "N/A",
-        Created: pdf.info?.CreationDate || "N/A",
-        Modified: pdf.info?.ModDate || "N/A"
-      }
-
-      if (pdf.info?.Author) sensitive.push("Author Name")
+      ;({ metadata, sensitive } = pdfMetadata(await pdfInfo(buffer)))
     } else if (ext === ".docx") {
       ;({ metadata, sensitive } = docxMetadata(buffer))
     } else {
