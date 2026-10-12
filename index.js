@@ -38,6 +38,7 @@ const { REST } = require("@discordjs/rest")
 const axios = require("axios")
 const exif = require("exif-parser")
 const { pdfInfo } = require("./packaging/pdf-info.cjs")
+const { imageMetadata } = require("./packaging/image-meta.cjs")
 const mammoth = require("mammoth")
 
 const { loadConfig } = require('./packaging/config.cjs')
@@ -110,18 +111,7 @@ client.on("interactionCreate", async interaction => {
         const parser = exif.create(buffer)
         const result = parser.parse()
 
-        metadata = {
-          Camera: result.tags.Make || "N/A",
-          Model: result.tags.Model || "N/A",
-          Software: result.tags.Software || "N/A",
-          DateTaken: result.tags.DateTimeOriginal || "N/A",
-          GPS: result.tags.GPSLatitude
-            ? `${result.tags.GPSLatitude}, ${result.tags.GPSLongitude}`
-            : "None"
-        }
-
-        if (result.tags.GPSLatitude) sensitive.push("GPS Location")
-        if (result.tags.Software) sensitive.push("Editing Software")
+        ;({ metadata, sensitive } = imageMetadata(result.tags))
       } catch {
         metadata = { EXIF: "No readable EXIF metadata found" }
         sensitive.push("Image Metadata Stripped or Unsupported")
