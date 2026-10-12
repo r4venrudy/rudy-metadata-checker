@@ -152,4 +152,9 @@ client.on("interactionCreate", async interaction => {
   }
 })
 
-registerCommands().then(() => client.login(TOKEN))
+registerCommands()
+  .then(() => client.login(TOKEN))
+  .catch(err => {
+    console.error(`Startup failed (check DISCORD_TOKEN and CLIENT_ID): ${err.message}`)
+    process.exit(1)
+  })
