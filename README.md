@@ -46,9 +46,8 @@ Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a 
 
 ## Implementation notes
 
-- DOCX core properties are not extracted. The displayed modification time belongs to the temporary download, not the original document. Mammoth is imported but unused.
 - The PDF path uses the `pdf-parse` v2 `PDFParse.getInfo()` API and destroys its worker after use. An offline PDF fixture checks document information extraction.
-- The code downloads the complete attachment and writes a temporary file, which is removed in `finally`. Download timeout is 15 seconds; no explicit file-size limit is implemented.
+- The attachment is downloaded into memory (no temporary files) with a 15 second timeout; files over 25 MB are rejected before download.
 - Replies are channel-visible and may contain GPS coordinates or author names. A missing EXIF result can mean unsupported parsing or no readable metadata; it does not prove deliberate stripping.
 - This documentation is based on source inspection; authenticated Discord and parser integrations require live validation.
 
