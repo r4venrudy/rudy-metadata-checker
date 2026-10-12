@@ -39,6 +39,7 @@ const axios = require("axios")
 const exif = require("exif-parser")
 const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
+const { docxMetadata } = require("./packaging/docx-meta.cjs")
 const mammoth = require("mammoth")
 
 const { loadConfig } = require('./packaging/config.cjs')
@@ -129,14 +130,7 @@ client.on("interactionCreate", async interaction => {
 
       if (pdf.info?.Author) sensitive.push("Author Name")
     } else if (ext === ".docx") {
-      const stats = fs.statSync(tempPath)
-
-      metadata = {
-        FileSize: `${stats.size} bytes`,
-        Modified: stats.mtime.toISOString()
-      }
-
-      sensitive.push("Document Metadata (Limited)")
+      ;({ metadata, sensitive } = docxMetadata(buffer))
     } else {
       throw new Error("Unsupported file type")
     }
