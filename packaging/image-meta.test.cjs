@@ -1,0 +1,21 @@
+const test = require('node:test');
+const assert = require('node:assert');
+const { formatExifDate, imageMetadata } = require('./image-meta.cjs');
+
+test('formats Unix seconds as UTC', () => {
+  assert.strictEqual(formatExifDate(1700000000), '2023-11-14 22:13:20 UTC');
+  assert.strictEqual(formatExifDate(undefined), 'N/A');
+});
+
+test('flags GPS and software as sensitive', () => {
+  const { metadata, sensitive } = imageMetadata({ Make: 'Apple', GPSLatitude: 41.0082, GPSLongitude: -28.9784, Software: 'Photoshop' });
+  assert.strictEqual(metadata.Camera, 'Apple');
+  assert.match(metadata.GPS, /^41\.008200, -28\.978400 \(https:\/\/maps\.google\.com\/\?q=41\.0082,-28\.9784\)$/);
+  assert.deepStrictEqual(sensitive, ['GPS Location', 'Editing Software']);
+});
+
+test('no tags means nothing sensitive', () => {
+  const { metadata, sensitive } = imageMetadata({});
+  assert.strictEqual(metadata.GPS, 'None');
+  assert.deepStrictEqual(sensitive, []);
+});
