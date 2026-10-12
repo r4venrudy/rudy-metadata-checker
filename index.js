@@ -97,12 +97,10 @@ client.on("interactionCreate", async interaction => {
     await interaction.editReply("❌ File is larger than 25 MB.")
     return
   }
-  const tempPath = path.join(require("node:os").tmpdir(), `rudy_${require("node:crypto").randomUUID()}${ext}`)
 
   try {
     const res = await axios.get(attachment.url, { responseType: "arraybuffer", timeout: 15000 })
     const buffer = Buffer.from(res.data)
-    fs.writeFileSync(tempPath, buffer)
 
     let metadata = {}
     let sensitive = []
@@ -149,8 +147,6 @@ client.on("interactionCreate", async interaction => {
     await interaction.editReply({ embeds: [embed] })
   } catch (err) {
     await interaction.editReply(`❌ Error: ${err.message}`)
-  } finally {
-    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath)
   }
 })
 
