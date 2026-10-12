@@ -20,10 +20,11 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 
 | Format | Implemented behavior |
 | :--- | :--- |
-| JPEG / PNG | Attempts EXIF parsing for camera, model, software, timestamp and GPS fields; support depends on the parser and file |
-| PDF | Attempts author, creator, producer, creation and modification fields |
-| DOCX | Reports downloaded file size and the temporary file's local modification timestamp |
-| Discord | `/metadata file:<attachment>` with extracted fields and review labels |
+| JPEG | EXIF camera, model, software, date taken (UTC) and GPS with a map link, plus XMP title/author/creator tool |
+| PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…) and a summary of embedded XMP |
+| PDF | Title, author, creator, producer, and creation/modification dates formatted from PDF date strings |
+| DOCX | Title, author, last modified by, revision, created/modified dates, application and company from `docProps/core.xml` and `app.xml` |
+| Discord | `/metadata file:<attachment>` with extracted fields and review labels; the type is detected from the file contents, files over 25 MB are refused |
 
 ## Quick start
 
