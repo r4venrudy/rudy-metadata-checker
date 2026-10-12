@@ -39,6 +39,7 @@ const exif = require("exif-parser")
 const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
+const { pngMetadata } = require("./packaging/png-meta.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
@@ -104,8 +105,8 @@ client.on("interactionCreate", async interaction => {
     let sensitive = []
 
     if (ext === ".png") {
-      // exif-parser only reads JPEG; PNG text chunks are not EXIF
-      metadata = { EXIF: "EXIF extraction is only supported for JPEG images" }
+      // exif-parser only reads JPEG; PNGs keep their metadata in text chunks instead
+      ;({ metadata, sensitive } = pngMetadata(buffer))
     } else if ([".jpg", ".jpeg"].includes(ext)) {
       try {
         const parser = exif.create(buffer)
