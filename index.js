@@ -33,8 +33,7 @@ try {
   raven_fail()
 }
 
-const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, Routes } = require("discord.js")
-const { REST } = require("@discordjs/rest")
+const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, Routes, REST } = require("discord.js")
 const axios = require("axios")
 const exif = require("exif-parser")
 const { pdfInfo } = require("./packaging/pdf-info.cjs")
