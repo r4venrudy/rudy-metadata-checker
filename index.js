@@ -39,7 +39,7 @@ const exif = require("exif-parser")
 const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
-const { pngMetadata } = require("./packaging/png-meta.cjs")
+const { pngMetadata, xmpSummary } = require("./packaging/png-meta.cjs")
 const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
@@ -116,6 +116,13 @@ client.on("interactionCreate", async interaction => {
         ;({ metadata, sensitive } = imageMetadata(result.tags))
       } catch {
         metadata = { EXIF: "No readable EXIF metadata found (stripped or unsupported)" }
+      }
+      // Photoshop, Lightroom and Canva also embed an XMP packet in JPEGs
+      const xmp = buffer.toString("utf8").match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/)
+      if (xmp) {
+        const extra = xmpSummary(xmp[0])
+        for (const [k, v] of Object.entries(extra)) if (!metadata[k] || metadata[k] === "N/A") metadata[`XMP ${k}`] = v
+        if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
       }
     } else if (ext === ".pdf") {
       ;({ metadata, sensitive } = pdfMetadata(await pdfInfo(buffer)))
