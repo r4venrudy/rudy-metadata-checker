@@ -103,15 +103,17 @@ client.on("interactionCreate", async interaction => {
     let metadata = {}
     let sensitive = []
 
-    if ([".jpg", ".jpeg", ".png"].includes(ext)) {
+    if (ext === ".png") {
+      // exif-parser only reads JPEG; PNG text chunks are not EXIF
+      metadata = { EXIF: "EXIF extraction is only supported for JPEG images" }
+    } else if ([".jpg", ".jpeg"].includes(ext)) {
       try {
         const parser = exif.create(buffer)
         const result = parser.parse()
 
         ;({ metadata, sensitive } = imageMetadata(result.tags))
       } catch {
-        metadata = { EXIF: "No readable EXIF metadata found" }
-        sensitive.push("Image Metadata Stripped or Unsupported")
+        metadata = { EXIF: "No readable EXIF metadata found (stripped or unsupported)" }
       }
     } else if (ext === ".pdf") {
       const pdf = { info: await pdfInfo(buffer) }
