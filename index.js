@@ -42,6 +42,7 @@ const { docxMetadata } = require("./packaging/docx-meta.cjs")
 const { pngMetadata, xmpSummary } = require("./packaging/png-meta.cjs")
 const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
 const { formatField } = require("./packaging/format.cjs")
+const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
@@ -57,7 +58,7 @@ const commands = [
     .setDescription("Extract metadata from an uploaded file")
     .addAttachmentOption(o =>
       o.setName("file")
-        .setDescription("Upload an image, PDF, or DOCX file")
+        .setDescription("Upload a JPEG, PNG, WebP, PDF or DOCX file")
         .setRequired(true)
     )
 ].map(c => c.toJSON())
@@ -81,7 +82,7 @@ client.on("interactionCreate", async interaction => {
   const attachment = interaction.options.getAttachment("file")
   let ext = path.extname(attachment.name).toLowerCase()
 
-  const SUPPORTED = [".jpg", ".jpeg", ".png", ".pdf", ".docx"]
+  const SUPPORTED = [".jpg", ".jpeg", ".png", ".webp", ".pdf", ".docx"]
   const MAX_BYTES = 25 * 1024 * 1024
   if (!SUPPORTED.includes(ext)) {
     await interaction.editReply(`❌ Unsupported file type. Use one of: ${SUPPORTED.join(", ")}`)
@@ -99,10 +100,11 @@ client.on("interactionCreate", async interaction => {
     // Trust the file's magic bytes over its name, so a renamed .png sent as .jpg still parses
     const sniffed = buffer.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ? ".png"
       : buffer[0] === 0xff && buffer[1] === 0xd8 ? ".jpg"
+      : isWebp(buffer) ? ".webp"
       : buffer.subarray(0, 5).toString("latin1") === "%PDF-" ? ".pdf"
       : buffer.subarray(0, 2).toString("latin1") === "PK" && ext === ".docx" ? ".docx"
       : null
-    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, PDF or DOCX file")
+    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, WebP, PDF or DOCX file")
     ext = sniffed
 
     let metadata = {}
@@ -125,6 +127,22 @@ client.on("interactionCreate", async interaction => {
       if (xmp) {
         const extra = xmpSummary(xmp[0])
         for (const [k, v] of Object.entries(extra)) if (!metadata[k] || metadata[k] === "N/A") metadata[`XMP ${k}`] = v
+        if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
+      }
+    } else if (ext === ".webp") {
+      const { exif: tiff, xmp } = webpChunks(buffer)
+      if (tiff) {
+        try {
+          ;({ metadata, sensitive } = imageMetadata(exif.create(tiffAsJpeg(tiff)).parse().tags))
+        } catch {
+          metadata = { EXIF: "EXIF chunk present but unreadable" }
+        }
+      } else {
+        metadata = { EXIF: "No EXIF chunk (most WebP exports strip it)" }
+      }
+      if (xmp) {
+        const extra = xmpSummary(xmp)
+        for (const [k, v] of Object.entries(extra)) metadata[`XMP ${k}`] = v
         if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
       }
     } else if (ext === ".pdf") {
