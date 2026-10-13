@@ -167,7 +167,10 @@ client.on("interactionCreate", async interaction => {
 
     await interaction.editReply({ embeds: [embed] })
   } catch (err) {
-    await interaction.editReply(`❌ Error: ${err.message}`)
+    console.error(`/metadata ${attachment.name} failed:`, err)
+    // parser errors can be very long; Discord rejects messages over 2000 characters
+    const reason = String(err.message || err).slice(0, 300)
+    await interaction.editReply(`❌ Error: ${reason}`).catch(() => {})
   }
 })
 
