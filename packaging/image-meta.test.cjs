@@ -19,3 +19,11 @@ test('no tags means nothing sensitive', () => {
   assert.strictEqual(metadata.GPS, 'None');
   assert.deepStrictEqual(sensitive, []);
 });
+
+test('owner, copyright and camera serial are shown and flagged', () => {
+  const { metadata, sensitive } = imageMetadata({ Artist: 'Jane Doe ', Copyright: '(c) Jane', SerialNumber: '0123456789' });
+  assert.strictEqual(metadata.Owner, 'Jane Doe');
+  assert.strictEqual(metadata.Copyright, '(c) Jane');
+  assert.strictEqual(metadata.CameraSerial, '0123456789');
+  assert.deepStrictEqual(sensitive, ['Owner Name', 'Camera Serial Number']);
+});

@@ -16,9 +16,17 @@ function imageMetadata(tags = {}) {
       ? `${tags.GPSLatitude.toFixed(6)}, ${tags.GPSLongitude.toFixed(6)} (https://maps.google.com/?q=${tags.GPSLatitude},${tags.GPSLongitude})`
       : 'None'
   };
+  // Names and serial numbers tie a photo to a person or a specific camera; only shown when present
+  const owner = tags.Artist || tags.OwnerName;
+  const serial = tags.SerialNumber || tags.CameraSerialNumber;
+  if (owner) metadata.Owner = String(owner).trim();
+  if (tags.Copyright) metadata.Copyright = String(tags.Copyright).trim();
+  if (serial) metadata.CameraSerial = String(serial).trim();
   const sensitive = [];
   if (hasGps) sensitive.push('GPS Location');
   if (tags.Software) sensitive.push('Editing Software');
+  if (owner) sensitive.push('Owner Name');
+  if (serial) sensitive.push('Camera Serial Number');
   return { metadata, sensitive };
 }
 
