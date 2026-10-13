@@ -77,21 +77,22 @@ client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return
   if (interaction.commandName !== "metadata") return
 
-  await interaction.deferReply()
-
   const attachment = interaction.options.getAttachment("file")
   let ext = path.extname(attachment.name).toLowerCase()
 
+  // Rejections are only shown to the user who ran the command, so they don't clutter the channel
   const SUPPORTED = [".jpg", ".jpeg", ".png", ".webp", ".pdf", ".docx"]
   const MAX_BYTES = 25 * 1024 * 1024
   if (!SUPPORTED.includes(ext)) {
-    await interaction.editReply(`❌ Unsupported file type. Use one of: ${SUPPORTED.join(", ")}`)
+    await interaction.reply({ content: `❌ Unsupported file type. Use one of: ${SUPPORTED.join(", ")}`, ephemeral: true })
     return
   }
   if (attachment.size > MAX_BYTES) {
-    await interaction.editReply("❌ File is larger than 25 MB.")
+    await interaction.reply({ content: "❌ File is larger than 25 MB.", ephemeral: true })
     return
   }
+
+  await interaction.deferReply()
 
   try {
     const res = await axios.get(attachment.url, { responseType: "arraybuffer", timeout: 15000 })
