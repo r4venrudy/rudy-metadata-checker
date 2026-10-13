@@ -39,3 +39,7 @@ test('summarizes XMP packets instead of dumping XML', () => {
   const buf = png(chunk('iTXt', Buffer.from(`XML:com.adobe.xmp\0\0\0\0\0${xmp}`, 'utf8')));
   assert.deepStrictEqual(pngMetadata(buf).sensitive, ['Author Name', 'Editing Software']);
 });
+
+test('xmpSummary decodes XML entities', () => {
+  assert.deepStrictEqual(xmpSummary('<xmp:CreatorTool>Canva &amp; Co</xmp:CreatorTool>'), { Software: 'Canva & Co' });
+});

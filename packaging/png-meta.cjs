@@ -1,11 +1,12 @@
 // Reads PNG tEXt / iTXt / zTXt chunks, where tools store fields like Author, Software,
 // Creation Time or Description (screenshots and exports often carry these).
 const zlib = require('node:zlib');
+const { decodeXml } = require('./docx-meta.cjs');
 const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 // XMP is an RDF/XML packet; pull out the handful of fields people care about instead of dumping the XML.
 function xmpSummary(xml) {
-  const grab = re => { const m = xml.match(re); return m ? m[1].trim().slice(0, 200) : null; };
+  const grab = re => { const m = xml.match(re); return m ? decodeXml(m[1]).trim().slice(0, 200) : null; };
   const fields = {
     Title: grab(/<dc:title>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/),
     Author: grab(/<pdf:Author>([^<]+)<\/pdf:Author>/) || grab(/<dc:creator>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/),
