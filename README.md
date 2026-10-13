@@ -14,17 +14,18 @@
 
 ## Overview
 
-A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It supports image EXIF attempts, PDF document information and a limited DOCX file observation path.
+A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, text chunks from PNG, PDF document information and DOCX core/app properties.
 
 ## Capabilities
 
 | Format | Implemented behavior |
 | :--- | :--- |
-| JPEG | EXIF camera, model, software, date taken (UTC) and GPS with a map link, plus XMP title/author/creator tool |
+| JPEG | EXIF camera, model, software, date taken (UTC), GPS with a map link, owner name, copyright and camera serial, plus XMP title/author/creator tool |
+| WebP | The same EXIF fields from the RIFF `EXIF` chunk, plus the `XMP ` chunk |
 | PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…) and a summary of embedded XMP |
 | PDF | Title, author, creator, producer, and creation/modification dates formatted from PDF date strings |
 | DOCX | Title, author, last modified by, revision, created/modified dates, application and company from `docProps/core.xml` and `app.xml` |
-| Discord | `/metadata file:<attachment>` with extracted fields and review labels; the type is detected from the file contents, files over 25 MB are refused |
+| Discord | `/metadata file:<attachment>` with extracted fields and review labels; the type is detected from the file contents; unsupported or over-25 MB files get a private rejection |
 
 ## Quick start
 
@@ -54,9 +55,14 @@ Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a 
 ## Project map
 
 ```text
-index.js       Attachment handling, parser branches and Discord command
-package.json   Discord, HTTP and metadata dependencies
-raven.png      Required startup asset
+index.js                 Attachment handling, type detection and Discord command
+packaging/image-meta.cjs EXIF fields and sensitive-data labels
+packaging/png-meta.cjs   PNG text chunks and XMP summary
+packaging/webp-meta.cjs  WebP RIFF chunks (EXIF, XMP)
+packaging/pdf-*.cjs      PDF info and date formatting
+packaging/docx-meta.cjs  DOCX ZIP reading and XML properties
+packaging/*.test.cjs     Tests (npm test)
+raven.png                Required startup asset
 ```
 
 ## GitHub package
