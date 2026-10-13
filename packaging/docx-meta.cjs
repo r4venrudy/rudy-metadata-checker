@@ -31,7 +31,16 @@ function readZipEntry(buffer, wanted) {
 function xmlValue(xml, tag) {
   if (!xml) return null;
   const m = xml.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([^<]*)</${tag}>`));
-  return m ? m[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim() || null : null;
+  return m ? decodeXml(m[1]).trim() || null : null;
+}
+
+// &amp; must be decoded last, otherwise "&amp;lt;" (a literal "&lt;") would turn into "<"
+function decodeXml(text) {
+  return text
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
 }
 
 function docxMetadata(buffer) {
@@ -53,4 +62,4 @@ function docxMetadata(buffer) {
   return { metadata, sensitive };
 }
 
-module.exports = { docxMetadata, readZipEntry };
+module.exports = { docxMetadata, readZipEntry, decodeXml };
