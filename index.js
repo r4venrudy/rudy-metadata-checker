@@ -121,7 +121,7 @@ client.on("interactionCreate", async interaction => {
         const parser = exif.create(buffer)
         const result = parser.parse()
 
-        ;({ metadata, sensitive } = imageMetadata(result.tags))
+        ;({ metadata, sensitive } = imageMetadata(result.tags, { thumbnail: result.hasThumbnail("image/jpeg") }))
       } catch {
         metadata = { EXIF: "No readable EXIF metadata found (stripped or unsupported)" }
       }

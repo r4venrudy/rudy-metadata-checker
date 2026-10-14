@@ -5,7 +5,7 @@ function formatExifDate(value) {
   return new Date(value * 1000).toISOString().replace('T', ' ').replace('.000Z', ' UTC');
 }
 
-function imageMetadata(tags = {}) {
+function imageMetadata(tags = {}, { thumbnail = false } = {}) {
   const hasGps = typeof tags.GPSLatitude === 'number' && typeof tags.GPSLongitude === 'number';
   const metadata = {
     Camera: tags.Make || 'N/A',
@@ -31,6 +31,11 @@ function imageMetadata(tags = {}) {
   if (tags.Software) sensitive.push('Editing Software');
   if (owner) sensitive.push('Owner Name');
   if (serial) sensitive.push('Camera Serial Number');
+  // editors often crop the photo but leave the EXIF thumbnail of the original untouched
+  if (thumbnail) {
+    metadata.Thumbnail = 'Embedded (may still show the original, uncropped image)';
+    sensitive.push('Embedded Thumbnail');
+  }
   return { metadata, sensitive };
 }
 

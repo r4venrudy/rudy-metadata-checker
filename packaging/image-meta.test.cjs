@@ -34,3 +34,10 @@ test('falls back to CreateDate and shows a later ModifyDate', () => {
   assert.strictEqual(metadata.Modified, '2023-11-14 23:13:20 UTC');
   assert.strictEqual(imageMetadata({ DateTimeOriginal: 1700000000, ModifyDate: 1700000000 }).metadata.Modified, undefined);
 });
+
+test('an embedded EXIF thumbnail is shown and flagged', () => {
+  const { metadata, sensitive } = imageMetadata({}, { thumbnail: true });
+  assert.match(metadata.Thumbnail, /uncropped/);
+  assert.deepStrictEqual(sensitive, ['Embedded Thumbnail']);
+  assert.strictEqual(imageMetadata({}).metadata.Thumbnail, undefined);
+});
