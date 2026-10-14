@@ -17,6 +17,10 @@ function imageMetadata(tags = {}, { thumbnail = false } = {}) {
       ? `${tags.GPSLatitude.toFixed(6)}, ${tags.GPSLongitude.toFixed(6)} (https://maps.google.com/?q=${tags.GPSLatitude},${tags.GPSLongitude})`
       : 'None'
   };
+  if (hasGps && typeof tags.GPSAltitude === 'number') {
+    // GPSAltitudeRef 1 means below sea level
+    metadata.Altitude = `${(tags.GPSAltitudeRef === 1 ? -tags.GPSAltitude : tags.GPSAltitude).toFixed(0)} m`;
+  }
   if (typeof tags.ModifyDate === 'number' && tags.ModifyDate !== (tags.DateTimeOriginal ?? tags.CreateDate)) {
     metadata.Modified = formatExifDate(tags.ModifyDate);
   }

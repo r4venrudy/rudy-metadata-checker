@@ -41,3 +41,10 @@ test('an embedded EXIF thumbnail is shown and flagged', () => {
   assert.deepStrictEqual(sensitive, ['Embedded Thumbnail']);
   assert.strictEqual(imageMetadata({}).metadata.Thumbnail, undefined);
 });
+
+test('GPS altitude is shown with its sign', () => {
+  const gps = { GPSLatitude: 41, GPSLongitude: 29 };
+  assert.strictEqual(imageMetadata({ ...gps, GPSAltitude: 123.4 }).metadata.Altitude, '123 m');
+  assert.strictEqual(imageMetadata({ ...gps, GPSAltitude: 12, GPSAltitudeRef: 1 }).metadata.Altitude, '-12 m');
+  assert.strictEqual(imageMetadata({ GPSAltitude: 5 }).metadata.Altitude, undefined);
+});
