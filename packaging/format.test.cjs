@@ -20,3 +20,11 @@ test('caps a single very long value', () => {
   assert.strictEqual(out.length, 300);
   assert.ok(out.endsWith('…'));
 });
+
+const { escapeMarkdown } = require('./format.cjs');
+
+test('metadata values cannot inject Discord markdown', () => {
+  assert.strictEqual(escapeMarkdown('**Jane** ||x|| a_b `c`'), '\\*\\*Jane\\*\\* \\|\\|x\\|\\| a\\_b \\`c\\`');
+  assert.strictEqual(formatField({ Author: '__x__' }), '• Author: \\_\\_x\\_\\_');
+  assert.strictEqual(escapeMarkdown('https://maps.google.com/?q=1,2'), 'https://maps.google.com/?q=1,2');
+});

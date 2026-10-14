@@ -41,7 +41,7 @@ const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
 const { pngMetadata, xmpSummary } = require("./packaging/png-meta.cjs")
 const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
-const { formatField } = require("./packaging/format.cjs")
+const { formatField, escapeMarkdown } = require("./packaging/format.cjs")
 const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 const { isHeif, heifExif } = require("./packaging/heic-meta.cjs")
 
@@ -172,7 +172,7 @@ client.on("interactionCreate", async interaction => {
       .setTitle("🧠 Rudy Metadata Intelligence")
       .setColor(sensitive.length ? 0xff0000 : 0x00ff00)
       .addFields(
-        { name: "File", value: attachment.name },
+        { name: "File", value: escapeMarkdown(attachment.name).slice(0, 1024) },
         { name: "Type", value: ext.replace(".", "").toUpperCase() },
         { name: "Extracted Metadata", value: formatField(metadata) || "None" },
         { name: "Sensitive Findings", value: sensitive.length ? sensitive.join(", ") : "None detected" }
