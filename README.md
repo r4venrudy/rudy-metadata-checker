@@ -14,7 +14,7 @@
 
 ## Overview
 
-A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, text chunks from PNG, PDF document information and DOCX core/app properties.
+A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, EXIF from HEIC photos, text chunks from PNG, PDF document information and DOCX core/app properties.
 
 ## Capabilities
 
@@ -22,6 +22,7 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 | :--- | :--- |
 | JPEG | EXIF camera, model, software, date taken (UTC), GPS with a map link, owner name, copyright and camera serial, plus XMP title/author/creator tool |
 | WebP | The same EXIF fields from the RIFF `EXIF` chunk, plus the `XMP ` chunk |
+| HEIC / HEIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc` |
 | PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…) and a summary of embedded XMP |
 | PDF | Title, author, creator, producer, and creation/modification dates formatted from PDF date strings |
 | DOCX | Title, author, last modified by, revision, created/modified dates, application and company from `docProps/core.xml` and `app.xml` |
@@ -59,6 +60,7 @@ index.js                 Attachment handling, type detection and Discord command
 packaging/image-meta.cjs EXIF fields and sensitive-data labels
 packaging/png-meta.cjs   PNG text chunks and XMP summary
 packaging/webp-meta.cjs  WebP RIFF chunks (EXIF, XMP)
+packaging/heic-meta.cjs  HEIC/HEIF Exif item
 packaging/pdf-*.cjs      PDF info and date formatting
 packaging/docx-meta.cjs  DOCX ZIP reading and XML properties
 packaging/*.test.cjs     Tests (npm test)
