@@ -74,6 +74,15 @@ client.once("ready", () => {
   console.log(`Bot ready: ${client.user.tag}`)
 })
 
+// Adds fields from an XMP packet stored as plain text in the file, without overriding EXIF values
+function addEmbeddedXmp(buffer, metadata, sensitive) {
+  const xmp = buffer.toString("latin1").match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/)
+  if (!xmp) return
+  const extra = xmpSummary(Buffer.from(xmp[0], "latin1").toString("utf8"))
+  for (const [k, v] of Object.entries(extra)) if (!metadata[k] || metadata[k] === "N/A") metadata[`XMP ${k}`] = v
+  if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
+}
+
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return
   if (interaction.commandName !== "metadata") return
@@ -127,12 +136,7 @@ client.on("interactionCreate", async interaction => {
         metadata = { EXIF: "No readable EXIF metadata found (stripped or unsupported)" }
       }
       // Photoshop, Lightroom and Canva also embed an XMP packet in JPEGs
-      const xmp = buffer.toString("utf8").match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/)
-      if (xmp) {
-        const extra = xmpSummary(xmp[0])
-        for (const [k, v] of Object.entries(extra)) if (!metadata[k] || metadata[k] === "N/A") metadata[`XMP ${k}`] = v
-        if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
-      }
+      addEmbeddedXmp(buffer, metadata, sensitive)
     } else if (ext === ".webp") {
       const { exif: tiff, xmp } = webpChunks(buffer)
       if (tiff) {
@@ -161,6 +165,8 @@ client.on("interactionCreate", async interaction => {
       } else {
         metadata = { EXIF: "No EXIF item in this HEIC file" }
       }
+      // edited iPhone photos and Lightroom exports carry an XMP item next to the EXIF one
+      addEmbeddedXmp(buffer, metadata, sensitive)
     } else if (ext === ".pdf") {
       ;({ metadata, sensitive } = pdfMetadata(await pdfInfo(buffer)))
     } else if (ext === ".docx") {

@@ -14,7 +14,7 @@
 
 ## Overview
 
-A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, EXIF from HEIC photos, text chunks from PNG, PDF document information and DOCX core/app properties.
+A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, EXIF and XMP from HEIC photos, text chunks from PNG, PDF document information and DOCX core/app properties.
 
 ## Capabilities
 
@@ -22,7 +22,7 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 | :--- | :--- |
 | JPEG | EXIF camera, model, software, date taken (UTC, falling back to CreateDate), a later modification date, GPS with a map link and altitude, owner name, copyright, camera serial and an embedded-thumbnail warning, plus XMP title/author/creator tool |
 | WebP | The same EXIF fields from the RIFF `EXIF` chunk, plus the `XMP ` chunk |
-| HEIC / HEIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc` |
+| HEIC / HEIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc`, plus any XMP packet |
 | PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…) and a summary of embedded XMP |
 | PDF | Title, author, subject, keywords, creator, producer, page count, and creation/modification dates formatted from PDF date strings |
 | DOCX | Title, author, last modified by, revision, created/modified dates, application and company from `docProps/core.xml` and `app.xml` |
