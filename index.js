@@ -44,6 +44,7 @@ const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
 const { formatField, escapeMarkdown } = require("./packaging/format.cjs")
 const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 const { isHeif, heifExif } = require("./packaging/heic-meta.cjs")
+const { createCooldown, secondsFromEnv } = require("./packaging/cooldown.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
@@ -63,6 +64,8 @@ const commands = [
         .setRequired(true)
     )
 ].map(c => c.toJSON())
+
+const cooldown = createCooldown(secondsFromEnv(process.env.COOLDOWN_SECONDS, 10) * 1000)
 
 const rest = new REST({ version: "10" }).setToken(TOKEN)
 
@@ -99,6 +102,11 @@ client.on("interactionCreate", async interaction => {
   }
   if (attachment.size > MAX_BYTES) {
     await interaction.reply({ content: "❌ File is larger than 25 MB.", ephemeral: true })
+    return
+  }
+  const wait = cooldown.take(interaction.user.id)
+  if (wait > 0) {
+    await interaction.reply({ content: `⏳ Please wait ${Math.ceil(wait / 1000)} s before the next file.`, ephemeral: true })
     return
   }
 

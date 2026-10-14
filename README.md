@@ -38,7 +38,7 @@ cd rudy-metadata-checker
 npm install
 ```
 
-Set the `DISCORD_TOKEN` and `CLIENT_ID` environment variables, then start the bot:
+Set the `DISCORD_TOKEN` and `CLIENT_ID` environment variables (and optionally `COOLDOWN_SECONDS`, default 10, the wait between one user's files), then start the bot:
 
 ```bash
 node index.js
