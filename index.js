@@ -96,7 +96,8 @@ client.on("interactionCreate", async interaction => {
   await interaction.deferReply()
 
   try {
-    const res = await axios.get(attachment.url, { responseType: "arraybuffer", timeout: 15000 })
+    // the size Discord reports is checked above; cap the download too in case it differs
+    const res = await axios.get(attachment.url, { responseType: "arraybuffer", timeout: 15000, maxContentLength: MAX_BYTES })
     const buffer = Buffer.from(res.data)
 
     // Trust the file's magic bytes over its name, so a renamed .png sent as .jpg still parses
