@@ -20,7 +20,7 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 
 | Format | Implemented behavior |
 | :--- | :--- |
-| JPEG | EXIF camera, model, software, date taken (UTC), GPS with a map link, owner name, copyright and camera serial, plus XMP title/author/creator tool |
+| JPEG | EXIF camera, model, software, date taken (UTC, falling back to CreateDate), a later modification date, GPS with a map link and altitude, owner name, copyright, camera serial and an embedded-thumbnail warning, plus XMP title/author/creator tool |
 | WebP | The same EXIF fields from the RIFF `EXIF` chunk, plus the `XMP ` chunk |
 | HEIC / HEIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc` |
 | PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…) and a summary of embedded XMP |
@@ -50,6 +50,7 @@ Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a 
 
 - The PDF path uses the `pdf-parse` v2 `PDFParse.getInfo()` API and destroys its worker after use. An offline PDF fixture checks document information extraction.
 - The attachment is downloaded into memory (no temporary files) with a 15 second timeout; files over 25 MB are rejected before download.
+- Values from the file are escaped so Discord markdown in an author name or title cannot restyle the reply.
 - Replies are channel-visible and may contain GPS coordinates or author names. A missing EXIF result can mean unsupported parsing or no readable metadata; it does not prove deliberate stripping.
 - This documentation is based on source inspection; authenticated Discord and parser integrations require live validation.
 
