@@ -23,6 +23,7 @@ test('PDF v2 reads known author and title offline', async () => {
   const info = await pdfInfo(fixture());
   assert.equal(info.Author, 'Rudy Offline Fixture');
   assert.equal(info.Title, 'Package Test');
+  assert.equal(info.Pages, 1);
 });
 test('invalid PDF rejects rather than reporting no metadata', async () => {
   await assert.rejects(pdfInfo(Buffer.from('not a PDF')));

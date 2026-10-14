@@ -21,3 +21,11 @@ test('flags author and software as sensitive', () => {
   assert.deepStrictEqual(sensitive, ['Author Name', 'Editing Software']);
   assert.deepStrictEqual(pdfMetadata({}).sensitive, []);
 });
+
+test('shows subject, keywords and page count when present', () => {
+  const { metadata } = pdfMetadata({ Subject: 'Q3 report', Keywords: 'internal, draft', Pages: 12 });
+  assert.strictEqual(metadata.Subject, 'Q3 report');
+  assert.strictEqual(metadata.Keywords, 'internal, draft');
+  assert.strictEqual(metadata.Pages, 12);
+  assert.strictEqual(pdfMetadata({}).metadata.Pages, undefined);
+});

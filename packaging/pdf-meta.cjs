@@ -18,6 +18,9 @@ function pdfMetadata(info = {}) {
     Created: formatPdfDate(info.CreationDate),
     Modified: formatPdfDate(info.ModDate)
   };
+  if (info.Subject) metadata.Subject = info.Subject;
+  if (info.Keywords) metadata.Keywords = info.Keywords;
+  if (Number.isInteger(info.Pages)) metadata.Pages = info.Pages;
   const sensitive = [];
   if (info.Author) sensitive.push('Author Name');
   if (info.Creator || info.Producer) sensitive.push('Editing Software');
