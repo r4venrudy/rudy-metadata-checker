@@ -11,11 +11,15 @@ function imageMetadata(tags = {}) {
     Camera: tags.Make || 'N/A',
     Model: tags.Model || 'N/A',
     Software: tags.Software || 'N/A',
-    DateTaken: formatExifDate(tags.DateTimeOriginal),
+    // phones and editors don't always write DateTimeOriginal; CreateDate is the next best capture time
+    DateTaken: formatExifDate(tags.DateTimeOriginal ?? tags.CreateDate),
     GPS: hasGps
       ? `${tags.GPSLatitude.toFixed(6)}, ${tags.GPSLongitude.toFixed(6)} (https://maps.google.com/?q=${tags.GPSLatitude},${tags.GPSLongitude})`
       : 'None'
   };
+  if (typeof tags.ModifyDate === 'number' && tags.ModifyDate !== (tags.DateTimeOriginal ?? tags.CreateDate)) {
+    metadata.Modified = formatExifDate(tags.ModifyDate);
+  }
   // Names and serial numbers tie a photo to a person or a specific camera; only shown when present
   const owner = tags.Artist || tags.OwnerName;
   const serial = tags.SerialNumber || tags.CameraSerialNumber;

@@ -27,3 +27,10 @@ test('owner, copyright and camera serial are shown and flagged', () => {
   assert.strictEqual(metadata.CameraSerial, '0123456789');
   assert.deepStrictEqual(sensitive, ['Owner Name', 'Camera Serial Number']);
 });
+
+test('falls back to CreateDate and shows a later ModifyDate', () => {
+  const { metadata } = imageMetadata({ CreateDate: 1700000000, ModifyDate: 1700003600 });
+  assert.strictEqual(metadata.DateTaken, '2023-11-14 22:13:20 UTC');
+  assert.strictEqual(metadata.Modified, '2023-11-14 23:13:20 UTC');
+  assert.strictEqual(imageMetadata({ DateTimeOriginal: 1700000000, ModifyDate: 1700000000 }).metadata.Modified, undefined);
+});
