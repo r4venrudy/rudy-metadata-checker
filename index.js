@@ -45,6 +45,7 @@ const { formatField, escapeMarkdown } = require("./packaging/format.cjs")
 const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 const { isHeif, heifExif } = require("./packaging/heic-meta.cjs")
 const { isVideo, videoMetadata } = require("./packaging/video-meta.cjs")
+const { isGif, gifMetadata } = require("./packaging/gif-meta.cjs")
 const { createCooldown, secondsFromEnv } = require("./packaging/cooldown.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
@@ -61,7 +62,7 @@ const commands = [
     .setDescription("Extract metadata from an uploaded file")
     .addAttachmentOption(o =>
       o.setName("file")
-        .setDescription("Upload a JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
+        .setDescription("Upload a JPEG, PNG, GIF, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
         .setRequired(true)
     )
 ].map(c => c.toJSON())
@@ -99,7 +100,7 @@ async function handleMetadata(interaction) {
   let ext = path.extname(attachment.name).toLowerCase()
 
   // Rejections are only shown to the user who ran the command, so they don't clutter the channel
-  const SUPPORTED = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".mp4", ".mov", ".m4v", ".pdf", ".docx", ".xlsx", ".pptx"]
+  const SUPPORTED = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".mp4", ".mov", ".m4v", ".pdf", ".docx", ".xlsx", ".pptx"]
   // Word, Excel and PowerPoint files share the same ZIP layout and docProps metadata
   const OFFICE = [".docx", ".xlsx", ".pptx"]
   const MAX_BYTES = 25 * 1024 * 1024
@@ -128,13 +129,14 @@ async function handleMetadata(interaction) {
     const sniffed = buffer.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ? ".png"
       : buffer[0] === 0xff && buffer[1] === 0xd8 ? ".jpg"
       : isWebp(buffer) ? ".webp"
+      : isGif(buffer) ? ".gif"
       : isHeif(buffer) ? ".heic"
       // QuickTime files carry the "qt  " brand; label them MOV rather than MP4 in the embed
       : isVideo(buffer) ? (buffer.toString("latin1", 8, 12) === "qt  " ? ".mov" : ".mp4")
       : buffer.subarray(0, 5).toString("latin1") === "%PDF-" ? ".pdf"
       : buffer.subarray(0, 2).toString("latin1") === "PK" && OFFICE.includes(ext) ? ext
       : null
-    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
+    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, GIF, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
     ext = sniffed
 
     let metadata = {}
@@ -165,6 +167,9 @@ async function handleMetadata(interaction) {
         metadata = { EXIF: "No readable EXIF metadata found (stripped or unsupported)" }
       }
       // Photoshop, Lightroom and Canva also embed an XMP packet in JPEGs
+      addEmbeddedXmp(buffer, metadata, sensitive)
+    } else if (ext === ".gif") {
+      ;({ metadata, sensitive } = gifMetadata(buffer))
       addEmbeddedXmp(buffer, metadata, sensitive)
     } else if (ext === ".webp") {
       const { exif: tiff, xmp } = webpChunks(buffer)
