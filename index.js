@@ -61,7 +61,7 @@ const commands = [
     .setDescription("Extract metadata from an uploaded file")
     .addAttachmentOption(o =>
       o.setName("file")
-        .setDescription("Upload a JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or DOCX file")
+        .setDescription("Upload a JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
         .setRequired(true)
     )
 ].map(c => c.toJSON())
@@ -95,7 +95,9 @@ client.on("interactionCreate", async interaction => {
   let ext = path.extname(attachment.name).toLowerCase()
 
   // Rejections are only shown to the user who ran the command, so they don't clutter the channel
-  const SUPPORTED = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".mp4", ".mov", ".m4v", ".pdf", ".docx"]
+  const SUPPORTED = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".mp4", ".mov", ".m4v", ".pdf", ".docx", ".xlsx", ".pptx"]
+  // Word, Excel and PowerPoint files share the same ZIP layout and docProps metadata
+  const OFFICE = [".docx", ".xlsx", ".pptx"]
   const MAX_BYTES = 25 * 1024 * 1024
   if (!SUPPORTED.includes(ext)) {
     await interaction.reply({ content: `❌ Unsupported file type. Use one of: ${SUPPORTED.join(", ")}`, ephemeral: true })
@@ -125,9 +127,9 @@ client.on("interactionCreate", async interaction => {
       : isHeif(buffer) ? ".heic"
       : isVideo(buffer) ? ".mp4"
       : buffer.subarray(0, 5).toString("latin1") === "%PDF-" ? ".pdf"
-      : buffer.subarray(0, 2).toString("latin1") === "PK" && ext === ".docx" ? ".docx"
+      : buffer.subarray(0, 2).toString("latin1") === "PK" && OFFICE.includes(ext) ? ext
       : null
-    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or DOCX file")
+    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
     ext = sniffed
 
     let metadata = {}
@@ -182,7 +184,7 @@ client.on("interactionCreate", async interaction => {
       ;({ metadata, sensitive } = videoMetadata(buffer))
     } else if (ext === ".pdf") {
       ;({ metadata, sensitive } = pdfMetadata(await pdfInfo(buffer)))
-    } else if (ext === ".docx") {
+    } else if (OFFICE.includes(ext)) {
       ;({ metadata, sensitive } = docxMetadata(buffer))
     } else {
       throw new Error("Unsupported file type")

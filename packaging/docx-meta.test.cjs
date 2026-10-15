@@ -18,7 +18,7 @@ test('reads core and app properties', () => {
 });
 
 test('rejects files that are not ZIP archives', () => {
-  assert.throws(() => docxMetadata(Buffer.from('not a zip')), /Not a valid DOCX/);
+  assert.throws(() => docxMetadata(Buffer.from('not a zip')), /Not a valid Office/);
 });
 
 test('decodeXml handles quotes, numeric entities and escaped ampersands', () => {

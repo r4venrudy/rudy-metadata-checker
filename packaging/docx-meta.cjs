@@ -1,10 +1,10 @@
-// Reads the author/revision properties Word stores in docProps/core.xml and docProps/app.xml.
+// Reads the author/revision properties Word, Excel and PowerPoint store in docProps/core.xml and docProps/app.xml.
 // A DOCX file is a ZIP archive, so this walks the ZIP central directory with node:zlib only.
 const zlib = require('node:zlib');
 
 function readZipEntry(buffer, wanted) {
   const eocd = buffer.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
-  if (eocd < 0) throw new Error('Not a valid DOCX (ZIP) file');
+  if (eocd < 0) throw new Error('Not a valid Office (ZIP) file');
   const count = buffer.readUInt16LE(eocd + 10);
   let ptr = buffer.readUInt32LE(eocd + 16);
   for (let i = 0; i < count; i++) {
