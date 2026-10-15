@@ -24,7 +24,7 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 | WebP | The same EXIF fields from the RIFF `EXIF` chunk, plus the `XMP ` chunk |
 | HEIC / HEIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc`, plus any XMP packet |
 | MP4 / MOV | Recording date and duration (`mvhd`), device, software and GPS from `udta` (`©xyz`) or the iPhone QuickTime keys; videos must fit the 25 MB limit |
-| PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…) and a summary of embedded XMP |
+| PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…) , a summary of embedded XMP, and EXIF (camera, date, GPS) from an `eXIf` chunk |
 | PDF | Title, author, subject, keywords, creator, producer, page count, and creation/modification dates formatted from PDF date strings |
 | DOCX / XLSX / PPTX | Title, author, last modified by, revision, created/modified dates, application, company, template, page/word/slide counts and total editing time from `docProps/core.xml` and `app.xml` |
 | Discord | `/metadata file:<attachment>` with extracted fields and review labels; the type is detected from the file contents; unsupported or over-25 MB files get a private rejection |

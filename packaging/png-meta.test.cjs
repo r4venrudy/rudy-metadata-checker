@@ -43,3 +43,20 @@ test('summarizes XMP packets instead of dumping XML', () => {
 test('xmpSummary decodes XML entities', () => {
   assert.deepStrictEqual(xmpSummary('<xmp:CreatorTool>Canva &amp; Co</xmp:CreatorTool>'), { Software: 'Canva & Co' });
 });
+
+test('pngExifChunk finds the eXIf chunk, also after IDAT', () => {
+  const { pngExifChunk } = require('./png-meta.cjs');
+  const exif = require('exif-parser');
+  const { tiffAsJpeg } = require('./webp-meta.cjs');
+  const tiff = Buffer.alloc(32);
+  tiff.write('II', 0, 'latin1'); tiff.writeUInt16LE(42, 2); tiff.writeUInt32LE(8, 4);
+  tiff.writeUInt16LE(1, 8);
+  tiff.writeUInt16LE(0x010f, 10); tiff.writeUInt16LE(2, 12); tiff.writeUInt32LE(6, 14); tiff.writeUInt32LE(26, 18);
+  tiff.write('Apple\0', 26, 'latin1');
+  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const file = Buffer.concat([sig, chunk('IHDR', Buffer.alloc(13)), chunk('IDAT', Buffer.alloc(4)), chunk('eXIf', tiff), chunk('IEND', Buffer.alloc(0))]);
+  const found = pngExifChunk(file);
+  assert.ok(found.equals(tiff));
+  assert.equal(exif.create(tiffAsJpeg(found)).parse().tags.Make, 'Apple');
+  assert.equal(pngExifChunk(Buffer.concat([sig, chunk('IEND', Buffer.alloc(0))])), null);
+});

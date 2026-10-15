@@ -39,7 +39,7 @@ const exif = require("exif-parser")
 const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
-const { pngMetadata, xmpSummary } = require("./packaging/png-meta.cjs")
+const { pngMetadata, pngExifChunk, xmpSummary } = require("./packaging/png-meta.cjs")
 const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
 const { formatField, escapeMarkdown } = require("./packaging/format.cjs")
 const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
@@ -141,8 +141,20 @@ async function handleMetadata(interaction) {
     let sensitive = []
 
     if (ext === ".png") {
-      // exif-parser only reads JPEG; PNGs keep their metadata in text chunks instead
+      // PNGs keep most metadata in text chunks rather than EXIF
       ;({ metadata, sensitive } = pngMetadata(buffer))
+      // newer PNGs (screenshots, phone exports) can also carry a full EXIF block, GPS included
+      const pngExif = pngExifChunk(buffer)
+      if (pngExif) {
+        try {
+          const fromExif = imageMetadata(exif.create(tiffAsJpeg(pngExif)).parse().tags)
+          if (metadata.PNG) metadata = {}
+          for (const [k, v] of Object.entries(fromExif.metadata)) if (v && v !== "N/A" && v !== "None" && !(k in metadata)) metadata[k] = v
+          for (const label of fromExif.sensitive) if (!sensitive.includes(label)) sensitive.push(label)
+        } catch {
+          metadata["EXIF"] = "eXIf chunk present but unreadable"
+        }
+      }
     } else if ([".jpg", ".jpeg"].includes(ext)) {
       try {
         const parser = exif.create(buffer)

@@ -49,6 +49,20 @@ function pngTextChunks(buffer) {
   return out;
 }
 
+// PNG 1.5 eXIf chunk: a raw TIFF/EXIF block (screenshots, phone exports), which can include GPS
+function pngExifChunk(buffer) {
+  if (!buffer.subarray(0, 8).equals(PNG_SIG)) return null;
+  let pos = 8;
+  while (pos + 12 <= buffer.length) {
+    const len = buffer.readUInt32BE(pos);
+    const type = buffer.toString('latin1', pos + 4, pos + 8);
+    if (type === 'eXIf') return buffer.subarray(pos + 8, pos + 8 + len);
+    if (type === 'IEND') return null; // the spec puts eXIf before IDAT, but some encoders write it after
+    pos += 12 + len;
+  }
+  return null;
+}
+
 function pngMetadata(buffer) {
   const text = pngTextChunks(buffer);
   const sensitive = [];
@@ -58,4 +72,4 @@ function pngMetadata(buffer) {
   return { metadata, sensitive };
 }
 
-module.exports = { pngMetadata, pngTextChunks, xmpSummary };
+module.exports = { pngMetadata, pngTextChunks, pngExifChunk, xmpSummary };
