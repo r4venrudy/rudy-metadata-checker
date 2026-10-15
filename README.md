@@ -14,7 +14,7 @@
 
 ## Overview
 
-A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, EXIF and XMP from HEIC photos, recording date, device and location from MP4/MOV videos, text chunks and EXIF from PNG, comments from GIF, PDF document information and Office (DOCX, XLSX, PPTX) core/app properties.
+A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, EXIF and XMP from HEIC and AVIF photos, recording date, device and location from MP4/MOV videos, text chunks and EXIF from PNG, comments from GIF, PDF document information and Office (DOCX, XLSX, PPTX) core/app properties.
 
 ## Capabilities
 
@@ -23,7 +23,7 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 | JPEG | EXIF camera, model, software, date taken (UTC, falling back to CreateDate), a later modification date, GPS with a map link, altitude and the direction the camera faced, owner name, copyright, camera and lens serials, lens model, image unique ID and an embedded-thumbnail warning, plus XMP title/author/creator tool and GPS, IPTC by-line, city, country, caption and keywords (APP13), and comment (COM) segments |
 | GIF | Size, frame count, comment extensions (often a tool or author name), writer extensions and any XMP packet |
 | WebP | The same EXIF fields from the RIFF `EXIF` chunk, plus the `XMP ` chunk |
-| HEIC / HEIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc`, plus any XMP packet |
+| HEIC / HEIF / AVIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc`, plus any XMP packet |
 | MP4 / MOV | Recording date and duration (`mvhd`), device, software and GPS from `udta` (`©xyz`) or the iPhone QuickTime keys; videos must fit the 25 MB limit |
 | PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…), a summary of embedded XMP, and EXIF (camera, date, GPS) from an `eXIf` chunk |
 | PDF | Title, author, subject, keywords, creator, producer, page count, and creation/modification dates formatted from PDF date strings; flags JavaScript, open actions, launch actions and embedded files found in the uncompressed parts of the file, and counts incremental saves (an edited PDF can still contain its earlier text) |

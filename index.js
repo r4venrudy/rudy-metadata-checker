@@ -63,7 +63,7 @@ const commands = [
     .setDescription("Extract metadata from an uploaded file")
     .addAttachmentOption(o =>
       o.setName("file")
-        .setDescription("Upload a JPEG, PNG, GIF, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
+        .setDescription("Upload a JPEG, PNG, GIF, WebP, HEIC/AVIF, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
         .setRequired(true)
     )
 ].map(c => c.toJSON())
@@ -102,7 +102,7 @@ async function handleMetadata(interaction) {
   let ext = path.extname(attachment.name).toLowerCase()
 
   // Rejections are only shown to the user who ran the command, so they don't clutter the channel
-  const SUPPORTED = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".mp4", ".mov", ".m4v", ".pdf", ".docx", ".xlsx", ".pptx"]
+  const SUPPORTED = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".avif", ".mp4", ".mov", ".m4v", ".pdf", ".docx", ".xlsx", ".pptx"]
   // Word, Excel and PowerPoint files share the same ZIP layout and docProps metadata
   const OFFICE = [".docx", ".xlsx", ".pptx"]
   const MAX_BYTES = 25 * 1024 * 1024
@@ -132,13 +132,14 @@ async function handleMetadata(interaction) {
       : buffer[0] === 0xff && buffer[1] === 0xd8 ? ".jpg"
       : isWebp(buffer) ? ".webp"
       : isGif(buffer) ? ".gif"
-      : isHeif(buffer) ? ".heic"
+      // AVIF uses the same HEIF container (and Exif item); keep its own name in the embed
+      : isHeif(buffer) ? (buffer.toString("latin1", 8, 12) === "avif" ? ".avif" : ".heic")
       // QuickTime files carry the "qt  " brand; label them MOV rather than MP4 in the embed
       : isVideo(buffer) ? (buffer.toString("latin1", 8, 12) === "qt  " ? ".mov" : ".mp4")
       : buffer.subarray(0, 5).toString("latin1") === "%PDF-" ? ".pdf"
       : buffer.subarray(0, 2).toString("latin1") === "PK" && OFFICE.includes(ext) ? ext
       : null
-    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, GIF, WebP, HEIC, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
+    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, GIF, WebP, HEIC/AVIF, MP4/MOV, PDF or Office (DOCX/XLSX/PPTX) file")
     ext = sniffed
 
     let metadata = {}
@@ -196,7 +197,7 @@ async function handleMetadata(interaction) {
         if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
         if (extra.GPS && !sensitive.includes("GPS Location")) sensitive.push("GPS Location")
       }
-    } else if (ext === ".heic") {
+    } else if (ext === ".heic" || ext === ".avif") {
       // iPhone photos: same EXIF fields as JPEG, including GPS when location was on
       const tiff = heifExif(buffer)
       if (tiff) {
