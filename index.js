@@ -129,7 +129,8 @@ async function handleMetadata(interaction) {
       : buffer[0] === 0xff && buffer[1] === 0xd8 ? ".jpg"
       : isWebp(buffer) ? ".webp"
       : isHeif(buffer) ? ".heic"
-      : isVideo(buffer) ? ".mp4"
+      // QuickTime files carry the "qt  " brand; label them MOV rather than MP4 in the embed
+      : isVideo(buffer) ? (buffer.toString("latin1", 8, 12) === "qt  " ? ".mov" : ".mp4")
       : buffer.subarray(0, 5).toString("latin1") === "%PDF-" ? ".pdf"
       : buffer.subarray(0, 2).toString("latin1") === "PK" && OFFICE.includes(ext) ? ext
       : null
@@ -183,7 +184,7 @@ async function handleMetadata(interaction) {
       }
       // edited iPhone photos and Lightroom exports carry an XMP item next to the EXIF one
       addEmbeddedXmp(buffer, metadata, sensitive)
-    } else if (ext === ".mp4") {
+    } else if (ext === ".mp4" || ext === ".mov") {
       // phone videos: recording date, device and the location where it was filmed
       ;({ metadata, sensitive } = videoMetadata(buffer))
     } else if (ext === ".pdf") {
