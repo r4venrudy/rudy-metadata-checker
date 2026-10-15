@@ -41,4 +41,14 @@ function pdfActiveContent(buffer) {
   return ACTIVE.filter(([re]) => re.test(text)).map(([, label]) => label);
 }
 
-module.exports = { formatPdfDate, pdfMetadata, pdfActiveContent };
+// Each incremental save appends a new section ending in %%EOF and leaves the old objects in the
+// file, so text that was "deleted" or redacted in a later revision can often still be recovered.
+function pdfRevisions(buffer) {
+  const text = buffer.toString('latin1');
+  const count = (text.match(/%%EOF/g) || []).length;
+  // "fast web view" (linearized) files end their first-page section with an extra %%EOF
+  const linearized = /\/Linearized\s/.test(text.slice(0, 2048));
+  return linearized && count > 1 ? count - 1 : count;
+}
+
+module.exports = { formatPdfDate, pdfMetadata, pdfActiveContent, pdfRevisions };

@@ -36,3 +36,14 @@ test('pdfActiveContent finds JavaScript, open actions, launch and embedded files
   assert.deepStrictEqual(pdfActiveContent(pdf), ['JavaScript', 'Automatic action on open', 'Embedded file']);
   assert.deepStrictEqual(pdfActiveContent(Buffer.from('%PDF-1.4\n<< /Type /Catalog /JSON 1 /AAA 2 >>\n%%EOF')), []);
 });
+
+test('pdfRevisions counts incremental saves', () => {
+  const { pdfRevisions } = require('./pdf-meta.cjs');
+  assert.strictEqual(pdfRevisions(Buffer.from('%PDF-1.7\n...\n%%EOF\n')), 1);
+  assert.strictEqual(pdfRevisions(Buffer.from('%PDF-1.7\n...\n%%EOF\n1 0 obj\n...\n%%EOF\n')), 2);
+});
+
+test('a linearized PDF is not counted as edited', () => {
+  const { pdfRevisions } = require('./pdf-meta.cjs');
+  assert.strictEqual(pdfRevisions(Buffer.from('%PDF-1.7\n1 0 obj << /Linearized 1 /L 1000 >>\n%%EOF\n2 0 obj\n%%EOF\n')), 1);
+});

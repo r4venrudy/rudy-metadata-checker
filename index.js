@@ -40,7 +40,7 @@ const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
 const { pngMetadata, pngExifChunk, xmpSummary } = require("./packaging/png-meta.cjs")
-const { pdfMetadata, pdfActiveContent } = require("./packaging/pdf-meta.cjs")
+const { pdfMetadata, pdfActiveContent, pdfRevisions } = require("./packaging/pdf-meta.cjs")
 const { formatField, escapeMarkdown } = require("./packaging/format.cjs")
 const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 const { isHeif, heifExif } = require("./packaging/heic-meta.cjs")
@@ -213,6 +213,11 @@ async function handleMetadata(interaction) {
       ;({ metadata, sensitive } = videoMetadata(buffer))
     } else if (ext === ".pdf") {
       ;({ metadata, sensitive } = pdfMetadata(await pdfInfo(buffer)))
+      const revisions = pdfRevisions(buffer)
+      if (revisions > 1) {
+        metadata.Revisions = `${revisions} (edited after creation; earlier versions may still be in the file)`
+        sensitive.push("Earlier Revisions")
+      }
       // scripts, auto-run actions and attachments are how malicious PDFs work
       const active = pdfActiveContent(buffer)
       if (active.length) {
