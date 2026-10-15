@@ -44,6 +44,7 @@ const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
 const { formatField, escapeMarkdown } = require("./packaging/format.cjs")
 const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 const { isHeif, heifExif } = require("./packaging/heic-meta.cjs")
+const { isVideo, videoMetadata } = require("./packaging/video-meta.cjs")
 const { createCooldown, secondsFromEnv } = require("./packaging/cooldown.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
@@ -60,7 +61,7 @@ const commands = [
     .setDescription("Extract metadata from an uploaded file")
     .addAttachmentOption(o =>
       o.setName("file")
-        .setDescription("Upload a JPEG, PNG, WebP, HEIC, PDF or DOCX file")
+        .setDescription("Upload a JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or DOCX file")
         .setRequired(true)
     )
 ].map(c => c.toJSON())
@@ -94,7 +95,7 @@ client.on("interactionCreate", async interaction => {
   let ext = path.extname(attachment.name).toLowerCase()
 
   // Rejections are only shown to the user who ran the command, so they don't clutter the channel
-  const SUPPORTED = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".pdf", ".docx"]
+  const SUPPORTED = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".mp4", ".mov", ".m4v", ".pdf", ".docx"]
   const MAX_BYTES = 25 * 1024 * 1024
   if (!SUPPORTED.includes(ext)) {
     await interaction.reply({ content: `❌ Unsupported file type. Use one of: ${SUPPORTED.join(", ")}`, ephemeral: true })
@@ -122,10 +123,11 @@ client.on("interactionCreate", async interaction => {
       : buffer[0] === 0xff && buffer[1] === 0xd8 ? ".jpg"
       : isWebp(buffer) ? ".webp"
       : isHeif(buffer) ? ".heic"
+      : isVideo(buffer) ? ".mp4"
       : buffer.subarray(0, 5).toString("latin1") === "%PDF-" ? ".pdf"
       : buffer.subarray(0, 2).toString("latin1") === "PK" && ext === ".docx" ? ".docx"
       : null
-    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, WebP, HEIC, PDF or DOCX file")
+    if (!sniffed) throw new Error("The file contents don't match a supported JPEG, PNG, WebP, HEIC, MP4/MOV, PDF or DOCX file")
     ext = sniffed
 
     let metadata = {}
@@ -175,6 +177,9 @@ client.on("interactionCreate", async interaction => {
       }
       // edited iPhone photos and Lightroom exports carry an XMP item next to the EXIF one
       addEmbeddedXmp(buffer, metadata, sensitive)
+    } else if (ext === ".mp4") {
+      // phone videos: recording date, device and the location where it was filmed
+      ;({ metadata, sensitive } = videoMetadata(buffer))
     } else if (ext === ".pdf") {
       ;({ metadata, sensitive } = pdfMetadata(await pdfInfo(buffer)))
     } else if (ext === ".docx") {
