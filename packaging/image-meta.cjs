@@ -30,11 +30,17 @@ function imageMetadata(tags = {}, { thumbnail = false } = {}) {
   if (owner) metadata.Owner = String(owner).trim();
   if (tags.Copyright) metadata.Copyright = String(tags.Copyright).trim();
   if (serial) metadata.CameraSerial = String(serial).trim();
+  // the lens serial identifies a lens as surely as the body serial does; ImageUniqueID links copies of
+  // the same shot across sites; LensModel on phones names the device ("iPhone 14 Pro back camera")
+  if (tags.LensModel) metadata.Lens = String(tags.LensModel).trim();
+  if (tags.LensSerialNumber) metadata.LensSerial = String(tags.LensSerialNumber).trim();
+  if (tags.ImageUniqueID) metadata.ImageUniqueID = String(tags.ImageUniqueID).trim();
   const sensitive = [];
   if (hasGps) sensitive.push('GPS Location');
   if (tags.Software) sensitive.push('Editing Software');
   if (owner) sensitive.push('Owner Name');
   if (serial) sensitive.push('Camera Serial Number');
+  if (tags.LensSerialNumber) sensitive.push('Lens Serial Number');
   // editors often crop the photo but leave the EXIF thumbnail of the original untouched
   if (thumbnail) {
     metadata.Thumbnail = 'Embedded (may still show the original, uncropped image)';

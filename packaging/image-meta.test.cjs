@@ -48,3 +48,11 @@ test('GPS altitude is shown with its sign', () => {
   assert.strictEqual(imageMetadata({ ...gps, GPSAltitude: 12, GPSAltitudeRef: 1 }).metadata.Altitude, '-12 m');
   assert.strictEqual(imageMetadata({ GPSAltitude: 5 }).metadata.Altitude, undefined);
 });
+
+test('lens model, lens serial and image unique ID are shown', () => {
+  const { metadata, sensitive } = imageMetadata({ LensModel: 'iPhone 14 Pro back triple camera 6.86mm f/1.78', LensSerialNumber: 'L998877', ImageUniqueID: 'a1b2c3' });
+  assert.strictEqual(metadata.Lens, 'iPhone 14 Pro back triple camera 6.86mm f/1.78');
+  assert.strictEqual(metadata.LensSerial, 'L998877');
+  assert.strictEqual(metadata.ImageUniqueID, 'a1b2c3');
+  assert.ok(sensitive.includes('Lens Serial Number'));
+});
