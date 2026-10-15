@@ -4,6 +4,14 @@ const zlib = require('node:zlib');
 const { decodeXml } = require('./docx-meta.cjs');
 const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+// XMP writes GPS as "41,0.492N" (degrees, decimal minutes) or "41,0,29.52N" (degrees, minutes, seconds)
+function xmpCoordinate(value) {
+  const m = /^\s*(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?\s*([NSEW])\s*$/i.exec(value || '');
+  if (!m) return null;
+  const deg = Number(m[1]) + Number(m[2]) / 60 + Number(m[3] || 0) / 3600;
+  return /[SW]/i.test(m[4]) ? -deg : deg;
+}
+
 // XMP is an RDF/XML packet; pull out the handful of fields people care about instead of dumping the XML.
 function xmpSummary(xml) {
   const grab = re => { const m = xml.match(re); return m ? decodeXml(m[1]).trim().slice(0, 200) : null; };
@@ -13,6 +21,10 @@ function xmpSummary(xml) {
     Software: grab(/<xmp:CreatorTool>([^<]+)<\/xmp:CreatorTool>/),
     Created: grab(/<xmp:CreateDate>([^<]+)<\/xmp:CreateDate>/)
   };
+  // Lightroom and Photoshop copy the photo's location into XMP, as an attribute or an element
+  const coord = tag => xmpCoordinate((xml.match(new RegExp(`exif:${tag}(?:="|>)([^"<]+)`)) || [])[1]);
+  const lat = coord('GPSLatitude'), lon = coord('GPSLongitude');
+  if (lat !== null && lon !== null) fields.GPS = `${lat.toFixed(6)}, ${lon.toFixed(6)} (https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)})`;
   return Object.fromEntries(Object.entries(fields).filter(([, v]) => v));
 }
 
@@ -68,6 +80,7 @@ function pngMetadata(buffer) {
   const sensitive = [];
   if (text.Author || text.Copyright) sensitive.push('Author Name');
   if (text.Software) sensitive.push('Editing Software');
+  if (text.GPS) sensitive.push('GPS Location');
   const metadata = Object.keys(text).length ? text : { PNG: 'No text metadata chunks found' };
   return { metadata, sensitive };
 }

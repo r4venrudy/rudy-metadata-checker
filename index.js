@@ -89,8 +89,9 @@ function addEmbeddedXmp(buffer, metadata, sensitive) {
   const xmp = buffer.toString("latin1").match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/)
   if (!xmp) return
   const extra = xmpSummary(Buffer.from(xmp[0], "latin1").toString("utf8"))
-  for (const [k, v] of Object.entries(extra)) if (!metadata[k] || metadata[k] === "N/A") metadata[`XMP ${k}`] = v
+  for (const [k, v] of Object.entries(extra)) if (!metadata[k] || metadata[k] === "N/A" || metadata[k] === "None") metadata[`XMP ${k}`] = v
   if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
+  if (extra.GPS && !sensitive.includes("GPS Location")) sensitive.push("GPS Location")
 }
 
 async function handleMetadata(interaction) {
@@ -193,6 +194,7 @@ async function handleMetadata(interaction) {
         const extra = xmpSummary(xmp)
         for (const [k, v] of Object.entries(extra)) metadata[`XMP ${k}`] = v
         if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
+        if (extra.GPS && !sensitive.includes("GPS Location")) sensitive.push("GPS Location")
       }
     } else if (ext === ".heic") {
       // iPhone photos: same EXIF fields as JPEG, including GPS when location was on
