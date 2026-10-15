@@ -26,3 +26,13 @@ test('decodeXml handles quotes, numeric entities and escaped ampersands', () => 
   assert.strictEqual(decodeXml('&#350;ahin &#x11F;'), 'Şahin ğ');
   assert.strictEqual(decodeXml('a &amp;lt; b'), 'a &lt; b');
 });
+
+test('reports page and word counts, template and editing time from app.xml', () => {
+  const file = Buffer.from('UEsDBBQAAAAIAJART11rVdfnQgAAAF0AAAARAAAAZG9jUHJvcHMvY29yZS54bWyzSS6wSs4vSg0oyi9ILSrJTC1WqMjNySu2Si6wVapQgnJSkm2VKpXsbFKSrZKLUhNL8ovsHPPybPSR+Db6GCbZAQBQSwMEFAAAAAgAkBFPXU9tRs96AAAAqgAAABAAAABkb2NQcm9wcy9hcHAueG1sTY7NCsIwEIRfpS+gof6AhyUgnsVSAp5DupGF1F02e/DxTSlUb98ww8fAoCyoRlg9BJylREN/Y5XdiMJq+4ntA26rILDFEmhG3x/PrdgiDPHVLCdwK8CTdar+0h/ArQhXkUIpGvHb3ykpV87WPXKmhN2yAfc/aabfuy9QSwECFAMUAAAACACQEU9da1XX50IAAABdAAAAEQAAAAAAAAAAAAAAgAEAAAAAZG9jUHJvcHMvY29yZS54bWxQSwECFAMUAAAACACQEU9dT21Gz3oAAACqAAAAEAAAAAAAAAAAAAAAgAFxAAAAZG9jUHJvcHMvYXBwLnhtbFBLBQYAAAAAAgACAH0AAAAZAQAAAAA=', 'base64');
+  const { metadata } = docxMetadata(file);
+  assert.strictEqual(metadata.Pages, '4');
+  assert.strictEqual(metadata.Words, '812');
+  assert.strictEqual(metadata.Template, 'Corp-Report.dotx');
+  assert.strictEqual(metadata.EditingTime, '2 h 15 min');
+  assert.strictEqual(metadata.Slides, undefined);
+});

@@ -56,6 +56,13 @@ function docxMetadata(buffer) {
     Application: xmlValue(app, 'Application') || 'N/A',
     Company: xmlValue(app, 'Company') || 'N/A'
   };
+  // document size and editing time; each format writes only the counts that apply to it
+  for (const [tag, label] of [['Pages', 'Pages'], ['Words', 'Words'], ['Slides', 'Slides'], ['Template', 'Template']]) {
+    const value = xmlValue(app, tag);
+    if (value && value !== '0') metadata[label] = value;
+  }
+  const minutes = Number(xmlValue(app, 'TotalTime'));
+  if (minutes > 0) metadata.EditingTime = minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`;
   const sensitive = [];
   if (metadata.Author !== 'N/A' || metadata.LastModifiedBy !== 'N/A') sensitive.push('Author Name');
   if (metadata.Company !== 'N/A') sensitive.push('Company Name');
