@@ -91,4 +91,4 @@ function heifExif(buffer) {
   return null;
 }
 
-module.exports = { isHeif, heifExif };
+module.exports = { isHeif, heifExif, boxes, HEIF_BRANDS };
