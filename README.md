@@ -20,7 +20,7 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 
 | Format | Implemented behavior |
 | :--- | :--- |
-| JPEG | EXIF camera, model, software, date taken (UTC, falling back to CreateDate), a later modification date, GPS with a map link and altitude, owner name, copyright, camera serial and an embedded-thumbnail warning, plus XMP title/author/creator tool |
+| JPEG | EXIF camera, model, software, date taken (UTC, falling back to CreateDate), a later modification date, GPS with a map link and altitude, owner name, copyright, camera serial and an embedded-thumbnail warning, plus XMP title/author/creator tool, IPTC by-line, city, country, caption and keywords (APP13), and comment (COM) segments |
 | GIF | Size, frame count, comment extensions (often a tool or author name), writer extensions and any XMP packet |
 | WebP | The same EXIF fields from the RIFF `EXIF` chunk, plus the `XMP ` chunk |
 | HEIC / HEIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc`, plus any XMP packet |
@@ -66,6 +66,7 @@ packaging/webp-meta.cjs  WebP RIFF chunks (EXIF, XMP)
 packaging/heic-meta.cjs  HEIC/HEIF Exif item
 packaging/video-meta.cjs MP4/MOV date, device and GPS
 packaging/gif-meta.cjs   GIF comments and extensions
+packaging/jpeg-extra.cjs JPEG comments and IPTC
 packaging/pdf-*.cjs      PDF info and date formatting
 packaging/docx-meta.cjs  Office (DOCX/XLSX/PPTX) ZIP reading and XML properties
 packaging/*.test.cjs     Tests (npm test)

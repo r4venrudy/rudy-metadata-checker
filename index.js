@@ -46,6 +46,7 @@ const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 const { isHeif, heifExif } = require("./packaging/heic-meta.cjs")
 const { isVideo, videoMetadata } = require("./packaging/video-meta.cjs")
 const { isGif, gifMetadata } = require("./packaging/gif-meta.cjs")
+const { jpegComments, jpegIptc } = require("./packaging/jpeg-extra.cjs")
 const { createCooldown, secondsFromEnv } = require("./packaging/cooldown.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
@@ -168,6 +169,12 @@ async function handleMetadata(interaction) {
       }
       // Photoshop, Lightroom and Canva also embed an XMP packet in JPEGs
       addEmbeddedXmp(buffer, metadata, sensitive)
+      // IPTC (photographer, city, caption) from news and stock photos, and free-text comments
+      for (const [k, v] of Object.entries(jpegIptc(buffer))) metadata[`IPTC ${k}`] = v
+      if (metadata["IPTC By-line"] && !sensitive.includes("Author Name")) sensitive.push("Author Name")
+      if (metadata["IPTC City"] || metadata["IPTC Country"]) sensitive.push("Location Name")
+      const comments = jpegComments(buffer)
+      if (comments.length) metadata.Comment = comments.join(" | ").slice(0, 300)
     } else if (ext === ".gif") {
       ;({ metadata, sensitive } = gifMetadata(buffer))
       addEmbeddedXmp(buffer, metadata, sensitive)
