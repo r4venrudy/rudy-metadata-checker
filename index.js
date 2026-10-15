@@ -91,7 +91,7 @@ function addEmbeddedXmp(buffer, metadata, sensitive) {
   if (extra.Author && !sensitive.includes("Author Name")) sensitive.push("Author Name")
 }
 
-client.on("interactionCreate", async interaction => {
+async function handleMetadata(interaction) {
   if (!interaction.isChatInputCommand()) return
   if (interaction.commandName !== "metadata") return
 
@@ -212,6 +212,12 @@ client.on("interactionCreate", async interaction => {
     const reason = String(err.message || err).slice(0, 300)
     await interaction.editReply(`❌ Error: ${reason}`).catch(() => {})
   }
+}
+
+// reply/deferReply fail when Discord expires the interaction (the bot answered after 3 s); outside a
+// catch that rejection is unhandled, and Node 15+ exits on unhandled rejections
+client.on("interactionCreate", interaction => {
+  handleMetadata(interaction).catch(err => console.error("/metadata could not reply:", err))
 })
 
 registerCommands()
