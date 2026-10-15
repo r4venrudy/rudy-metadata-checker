@@ -29,3 +29,10 @@ test('shows subject, keywords and page count when present', () => {
   assert.strictEqual(metadata.Pages, 12);
   assert.strictEqual(pdfMetadata({}).metadata.Pages, undefined);
 });
+
+test('pdfActiveContent finds JavaScript, open actions, launch and embedded files', () => {
+  const { pdfActiveContent } = require('./pdf-meta.cjs');
+  const pdf = Buffer.from('%PDF-1.7\n1 0 obj << /OpenAction 2 0 R /Names << /EmbeddedFiles 3 0 R >> >>\n2 0 obj << /S /JavaScript /JS (app.alert(1)) >>\n%%EOF', 'latin1');
+  assert.deepStrictEqual(pdfActiveContent(pdf), ['JavaScript', 'Automatic action on open', 'Embedded file']);
+  assert.deepStrictEqual(pdfActiveContent(Buffer.from('%PDF-1.4\n<< /Type /Catalog /JSON 1 /AAA 2 >>\n%%EOF')), []);
+});

@@ -40,7 +40,7 @@ const { pdfInfo } = require("./packaging/pdf-info.cjs")
 const { imageMetadata } = require("./packaging/image-meta.cjs")
 const { docxMetadata } = require("./packaging/docx-meta.cjs")
 const { pngMetadata, pngExifChunk, xmpSummary } = require("./packaging/png-meta.cjs")
-const { pdfMetadata } = require("./packaging/pdf-meta.cjs")
+const { pdfMetadata, pdfActiveContent } = require("./packaging/pdf-meta.cjs")
 const { formatField, escapeMarkdown } = require("./packaging/format.cjs")
 const { isWebp, webpChunks, tiffAsJpeg } = require("./packaging/webp-meta.cjs")
 const { isHeif, heifExif } = require("./packaging/heic-meta.cjs")
@@ -213,6 +213,12 @@ async function handleMetadata(interaction) {
       ;({ metadata, sensitive } = videoMetadata(buffer))
     } else if (ext === ".pdf") {
       ;({ metadata, sensitive } = pdfMetadata(await pdfInfo(buffer)))
+      // scripts, auto-run actions and attachments are how malicious PDFs work
+      const active = pdfActiveContent(buffer)
+      if (active.length) {
+        metadata["Active Content"] = active.join(", ")
+        sensitive.push("Active Content")
+      }
     } else if (OFFICE.includes(ext)) {
       ;({ metadata, sensitive } = docxMetadata(buffer))
     } else {

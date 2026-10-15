@@ -27,4 +27,18 @@ function pdfMetadata(info = {}) {
   return { metadata, sensitive };
 }
 
-module.exports = { formatPdfDate, pdfMetadata };
+// Active content a reader may run or open. Names are matched in the raw file, so anything packed
+// inside compressed object streams is not seen; a hit is reliable, a miss is not a guarantee.
+const ACTIVE = [
+  [/\/(JavaScript|JS)(?![A-Za-z0-9])/, 'JavaScript'],
+  [/\/OpenAction(?![A-Za-z0-9])|\/AA(?![A-Za-z0-9])/, 'Automatic action on open'],
+  [/\/Launch(?![A-Za-z0-9])/, 'Launch action (runs a program)'],
+  [/\/EmbeddedFiles?(?![A-Za-z0-9])/, 'Embedded file'],
+];
+
+function pdfActiveContent(buffer) {
+  const text = buffer.toString('latin1');
+  return ACTIVE.filter(([re]) => re.test(text)).map(([, label]) => label);
+}
+
+module.exports = { formatPdfDate, pdfMetadata, pdfActiveContent };
