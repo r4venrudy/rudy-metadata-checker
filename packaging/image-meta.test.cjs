@@ -56,3 +56,10 @@ test('lens model, lens serial and image unique ID are shown', () => {
   assert.strictEqual(metadata.ImageUniqueID, 'a1b2c3');
   assert.ok(sensitive.includes('Lens Serial Number'));
 });
+
+test('camera direction is shown with a compass point', () => {
+  const tags = { GPSLatitude: 41, GPSLongitude: 29 };
+  assert.strictEqual(imageMetadata({ ...tags, GPSImgDirection: 134.6 }).metadata.Facing, '135° (SE)');
+  assert.strictEqual(imageMetadata({ ...tags, GPSImgDirection: 359 }).metadata.Facing, '359° (N)');
+  assert.strictEqual(imageMetadata({ GPSImgDirection: 90 }).metadata.Facing, undefined);
+});

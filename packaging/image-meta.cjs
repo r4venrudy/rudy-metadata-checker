@@ -21,6 +21,12 @@ function imageMetadata(tags = {}, { thumbnail = false } = {}) {
     // GPSAltitudeRef 1 means below sea level
     metadata.Altitude = `${(tags.GPSAltitudeRef === 1 ? -tags.GPSAltitude : tags.GPSAltitude).toFixed(0)} m`;
   }
+  if (hasGps && typeof tags.GPSImgDirection === 'number') {
+    // which way the camera pointed; with the position it narrows down what the photo shows
+    const deg = ((tags.GPSImgDirection % 360) + 360) % 360;
+    const compass = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(deg / 45) % 8];
+    metadata.Facing = `${deg.toFixed(0)}° (${compass})`;
+  }
   if (typeof tags.ModifyDate === 'number' && tags.ModifyDate !== (tags.DateTimeOriginal ?? tags.CreateDate)) {
     metadata.Modified = formatExifDate(tags.ModifyDate);
   }
