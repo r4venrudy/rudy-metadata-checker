@@ -67,6 +67,10 @@ const commands = [
         .setDescription("Upload a JPEG, PNG, GIF, WebP, HEIC/AVIF, MP4/MOV, MP3, PDF or Office (DOCX/XLSX/PPTX) file")
         .setRequired(true)
     )
+    .addBooleanOption(o =>
+      o.setName("private")
+        .setDescription("Show the result only to you (default: everyone in the channel)")
+    )
 ].map(c => c.toJSON())
 
 const cooldown = createCooldown(secondsFromEnv(process.env.COOLDOWN_SECONDS, 10) * 1000)
@@ -121,7 +125,8 @@ async function handleMetadata(interaction) {
     return
   }
 
-  await interaction.deferReply()
+  // photos can reveal a home address through GPS; let the uploader see that before anyone else does
+  await interaction.deferReply({ ephemeral: interaction.options.getBoolean("private") ?? false })
 
   try {
     // the size Discord reports is checked above; cap the download too in case it differs

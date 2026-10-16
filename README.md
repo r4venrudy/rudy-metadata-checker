@@ -47,7 +47,7 @@ Set the `DISCORD_TOKEN` and `CLIENT_ID` environment variables (and optionally `C
 node index.js
 ```
 
-Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a file you are permitted to inspect.
+Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a file you are permitted to inspect; add `private:True` to see the result only yourself (useful when a photo may carry a home GPS location).
 
 ## Implementation notes
 
