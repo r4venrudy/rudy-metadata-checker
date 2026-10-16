@@ -14,7 +14,7 @@
 
 ## Overview
 
-A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, EXIF and XMP from HEIC and AVIF photos, recording date, device and location from MP4/MOV videos, text chunks and EXIF from PNG, comments from GIF, PDF document information and Office (DOCX, XLSX, PPTX) core/app properties.
+A Discord `/metadata` bot that downloads an attachment, attempts format-specific metadata extraction and returns an embed. It reads EXIF and XMP from JPEG and WebP images, EXIF and XMP from HEIC and AVIF photos, recording date, device and location from MP4/MOV videos, ID3 tags from MP3s, text chunks and EXIF from PNG, comments from GIF, PDF document information and Office (DOCX, XLSX, PPTX) core/app properties.
 
 ## Capabilities
 
@@ -26,6 +26,7 @@ A Discord `/metadata` bot that downloads an attachment, attempts format-specific
 | HEIC / HEIF / AVIF | The same EXIF fields (iPhone photos keep GPS here) from the `Exif` item located via `iinf` / `iloc`, plus any XMP packet |
 | MP4 / MOV | Recording date and duration (`mvhd`), device, software and GPS from `udta` (`©xyz`) or the iPhone QuickTime keys; videos must fit the 25 MB limit |
 | PNG | tEXt / zTXt / iTXt text chunks (Author, Software, Description, Creation Time…), a summary of embedded XMP, and EXIF (camera, date, GPS) from an `eXIf` chunk |
+| MP3 | ID3v2 (2.3/2.4) and ID3v1 tags: title, artist, album, year, encoded by, encoder, copyright, owner and comments |
 | PDF | Title, author, subject, keywords, creator, producer, page count, and creation/modification dates formatted from PDF date strings; flags JavaScript, open actions, launch actions and embedded files found in the uncompressed parts of the file, and counts incremental saves (an edited PDF can still contain its earlier text) |
 | DOCX / XLSX / PPTX | Title, author, last modified by, revision, created/modified dates, application, company, template, page/word/slide counts and total editing time from `docProps/core.xml` and `app.xml` |
 | Discord | `/metadata file:<attachment>` with extracted fields and review labels; the type is detected from the file contents; unsupported or over-25 MB files get a private rejection |
@@ -67,6 +68,7 @@ packaging/heic-meta.cjs  HEIC/HEIF Exif item
 packaging/video-meta.cjs MP4/MOV date, device and GPS
 packaging/gif-meta.cjs   GIF comments and extensions
 packaging/jpeg-extra.cjs JPEG comments and IPTC
+packaging/audio-meta.cjs MP3 ID3 tags
 packaging/pdf-*.cjs      PDF info and date formatting
 packaging/docx-meta.cjs  Office (DOCX/XLSX/PPTX) ZIP reading and XML properties
 packaging/*.test.cjs     Tests (npm test)
