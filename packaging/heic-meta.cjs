@@ -54,18 +54,20 @@ function itemLocation(buffer, start, wanted) {
   for (let i = 0; i < count; i++) {
     const id = version < 2 ? buffer.readUInt16BE(pos) : buffer.readUInt32BE(pos);
     pos += version < 2 ? 2 : 4;
-    if (version > 0) pos += 2; // construction_method
-    pos += 2; // data_reference_index
+    const method = version > 0 ? buffer.readUInt16BE(pos) & 15 : 0;
+    if (version > 0) pos += 2; // reserved bits and construction_method
+    const dataReferenceIndex = buffer.readUInt16BE(pos);
+    pos += 2;
     const base = readUInt(buffer, pos, baseSize); pos += baseSize;
     const extents = buffer.readUInt16BE(pos); pos += 2;
-    let first = null;
+    const locations = [];
     for (let x = 0; x < extents; x++) {
       pos += indexSize;
       const offset = readUInt(buffer, pos, offsetSize); pos += offsetSize;
       const length = readUInt(buffer, pos, lengthSize); pos += lengthSize;
-      if (!first) first = { offset: base + offset, length };
+      locations.push({ offset: base + offset, length });
     }
-    if (id === wanted) return first;
+    if (id === wanted) return { method, dataReferenceIndex, locations };
   }
   return null;
 }
@@ -82,8 +84,19 @@ function heifExif(buffer) {
     const id = exifItemId(buffer, iinf[1], iinf[2]);
     if (id === null) return null;
     const loc = itemLocation(buffer, iloc[1], id);
-    if (!loc || loc.offset + loc.length > buffer.length) return null;
-    const item = buffer.subarray(loc.offset, loc.offset + loc.length);
+    if (!loc || loc.dataReferenceIndex !== 0 || ![0, 1].includes(loc.method) || !loc.locations.length) return null;
+    const idat = loc.method === 1 ? children.find(b => b[0] === 'idat') : null;
+    if (loc.method === 1 && !idat) return null;
+    const sourceStart = idat ? idat[1] : 0;
+    const sourceEnd = idat ? idat[2] : buffer.length;
+    const extents = [];
+    for (const extent of loc.locations) {
+      const start = sourceStart + extent.offset;
+      if (start < sourceStart || extent.length > sourceEnd - start) return null;
+      extents.push(buffer.subarray(start, start + extent.length));
+    }
+    const item = Buffer.concat(extents);
+    if (item.length < 4) return null;
     // the item starts with a 4-byte offset to the TIFF header (skipping an optional "Exif\0\0")
     const tiffStart = 4 + item.readUInt32BE(0);
     return tiffStart < item.length ? item.subarray(tiffStart) : null;

@@ -35,6 +35,17 @@ function heic(withExif = true) {
   return Buffer.concat([ftyp, build(offset), box('mdat', item)]);
 }
 
+function heicWithIdat() {
+  const item = Buffer.concat([u32(6), Buffer.from('Exif\0\0', 'latin1'), tiffWithMake()]);
+  const ftyp = box('ftyp', Buffer.from('heic', 'latin1'), u32(0), Buffer.from('mif1heic', 'latin1'));
+  const infe = box('infe', full(2), u16(1), u16(0), Buffer.from('Exif', 'latin1'), Buffer.from([0]));
+  const iinf = box('iinf', full(0), u16(1), infe);
+  const split = 9;
+  const iloc = box('iloc', full(1), Buffer.from([0x44, 0]), u16(1), u16(1), u16(1), u16(0), u16(2),
+    u32(0), u32(split), u32(split), u32(item.length - split));
+  return Buffer.concat([ftyp, box('meta', full(0), iinf, iloc, box('idat', item))]);
+}
+
 test('isHeif checks the ftyp brand', () => {
   assert.ok(isHeif(heic()));
   assert.ok(!isHeif(Buffer.from('\0\0\0\x18ftypisom', 'latin1')));
@@ -48,4 +59,10 @@ test('heifExif finds the Exif item through iinf and iloc', () => {
 
 test('heifExif returns null when there is no Exif item', () => {
   assert.strictEqual(heifExif(heic(false)), null);
+});
+
+test('heifExif resolves split extents relative to the idat payload', () => {
+  const tiff = heifExif(heicWithIdat());
+  assert.ok(tiff.equals(tiffWithMake()));
+  assert.strictEqual(exif.create(tiffAsJpeg(tiff)).parse().tags.Make, 'Apple');
 });
