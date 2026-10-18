@@ -3,6 +3,18 @@
 const zlib = require('node:zlib');
 const { decodeXml } = require('./docx-meta.cjs');
 const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const MAX_INFLATED_TEXT_BYTES = 64 * 1024;
+
+function inflateText(data) {
+  try {
+    return zlib.inflateSync(data, { maxOutputLength: MAX_INFLATED_TEXT_BYTES });
+  } catch (error) {
+    if (error.code === 'ERR_BUFFER_TOO_LARGE') {
+      throw new Error('PNG compressed text metadata exceeds 64 KiB');
+    }
+    throw error;
+  }
+}
 
 // XMP writes GPS as "41,0.492N" (degrees, decimal minutes) or "41,0,29.52N" (degrees, minutes, seconds)
 function xmpCoordinate(value) {
@@ -42,14 +54,14 @@ function pngTextChunks(buffer) {
         const key = data.toString('latin1', 0, nul);
         let value = '';
         if (type === 'tEXt') value = data.toString('latin1', nul + 1);
-        else if (type === 'zTXt') value = zlib.inflateSync(data.subarray(nul + 2)).toString('latin1');
+        else if (type === 'zTXt') value = inflateText(data.subarray(nul + 2)).toString('latin1');
         else {
           // iTXt: keyword\0 compFlag compMethod lang\0 translated\0 text
           const compressed = data[nul + 1] === 1;
           const langEnd = data.indexOf(0, nul + 3);
           const transEnd = data.indexOf(0, langEnd + 1);
           const text = data.subarray(transEnd + 1);
-          value = (compressed ? zlib.inflateSync(text) : text).toString('utf8');
+          value = (compressed ? inflateText(text) : text).toString('utf8');
         }
         if (key === 'XML:com.adobe.xmp') Object.assign(out, xmpSummary(value));
         else out[key] = value.trim().slice(0, 200);

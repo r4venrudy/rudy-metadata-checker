@@ -23,6 +23,12 @@ test('reads tEXt, zTXt and iTXt chunks', () => {
   assert.deepStrictEqual(sensitive, ['Author Name', 'Editing Software']);
 });
 
+test('caps expanded compressed text metadata', () => {
+  const compressed = zlib.deflateSync(Buffer.alloc(128 * 1024, 65));
+  const file = png(chunk('zTXt', Buffer.concat([Buffer.from('Comment\0\0'), compressed])));
+  assert.throws(() => pngMetadata(file), /exceeds 64 KiB/);
+});
+
 test('PNG without text chunks', () => {
   assert.deepStrictEqual(pngMetadata(png()).metadata, { PNG: 'No text metadata chunks found' });
 });
