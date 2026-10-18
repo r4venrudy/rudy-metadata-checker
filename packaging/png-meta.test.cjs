@@ -87,6 +87,8 @@ test('pngExifChunk finds the eXIf chunk, also after IDAT', () => {
 test('xmpSummary reads GPS in attribute and element form', () => {
   const attr = xmpSummary('<rdf:Description exif:GPSLatitude="41,0.492N" exif:GPSLongitude="28,58.71E"/>');
   assert.match(attr.GPS, /^41\.008200, 28\.978500 \(https:\/\/maps\.google\.com/);
+  const singleQuoted = xmpSummary("<rdf:Description exif:GPSLatitude='41,0.492N' exif:GPSLongitude='28,58.71E'/>");
+  assert.match(singleQuoted.GPS, /^41\.008200, 28\.978500/);
   const elem = xmpSummary('<exif:GPSLatitude>33,51,24.48S</exif:GPSLatitude><exif:GPSLongitude>151,12,55.08E</exif:GPSLongitude>');
   assert.match(elem.GPS, /^-33\.856800, 151\.215300/);
   assert.strictEqual(xmpSummary('<exif:GPSLatitude>junk</exif:GPSLatitude>').GPS, undefined);

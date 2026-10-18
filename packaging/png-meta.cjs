@@ -41,7 +41,10 @@ function xmpSummary(xml) {
     Created: grab(/<xmp:CreateDate>([^<]+)<\/xmp:CreateDate>/)
   };
   // Lightroom and Photoshop copy the photo's location into XMP, as an attribute or an element
-  const coord = tag => (xml.match(new RegExp(`exif:${tag}(?:="|>)([^"<]+)`)) || [])[1];
+  const coord = tag => {
+    const match = xml.match(new RegExp(`exif:${tag}(?:="([^"]+)"|='([^']+)'|>([^<]+))`));
+    return match?.slice(1).find(value => value !== undefined);
+  };
   const lat = xmpCoordinate(coord('GPSLatitude'), 90), lon = xmpCoordinate(coord('GPSLongitude'), 180);
   if (lat !== null && lon !== null) fields.GPS = `${lat.toFixed(6)}, ${lon.toFixed(6)} (https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)})`;
   return Object.fromEntries(Object.entries(fields).filter(([, v]) => v));
