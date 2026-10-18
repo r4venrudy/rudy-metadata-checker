@@ -1,6 +1,7 @@
 // Reads the author/revision properties Word, Excel and PowerPoint store in docProps/core.xml and docProps/app.xml.
 // A DOCX file is a ZIP archive, so this walks the ZIP central directory with node:zlib only.
 const zlib = require('node:zlib');
+const MAX_XML_BYTES = 1024 * 1024;
 
 function readZipEntry(buffer, wanted) {
   const eocd = buffer.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
@@ -11,16 +12,34 @@ function readZipEntry(buffer, wanted) {
     if (buffer.readUInt32LE(ptr) !== 0x02014b50) break;
     const method = buffer.readUInt16LE(ptr + 10);
     const compressedSize = buffer.readUInt32LE(ptr + 20);
+    const uncompressedSize = buffer.readUInt32LE(ptr + 24);
     const nameLen = buffer.readUInt16LE(ptr + 28);
     const extraLen = buffer.readUInt16LE(ptr + 30);
     const commentLen = buffer.readUInt16LE(ptr + 32);
     const localOffset = buffer.readUInt32LE(ptr + 42);
     const name = buffer.toString('utf8', ptr + 46, ptr + 46 + nameLen);
     if (name === wanted) {
+      if (uncompressedSize > MAX_XML_BYTES) throw new Error('Office metadata XML exceeds 1 MiB');
+      if (localOffset + 30 > buffer.length || buffer.readUInt32LE(localOffset) !== 0x04034b50) {
+        throw new Error('Invalid Office ZIP local header');
+      }
       const start = localOffset + 30 + buffer.readUInt16LE(localOffset + 26) + buffer.readUInt16LE(localOffset + 28);
+      if (start + compressedSize > buffer.length) throw new Error('Truncated Office ZIP entry');
       const data = buffer.subarray(start, start + compressedSize);
-      if (method === 0) return data.toString('utf8');
-      if (method === 8) return zlib.inflateRawSync(data).toString('utf8');
+      if (method === 0) {
+        if (data.length > MAX_XML_BYTES) throw new Error('Office metadata XML exceeds 1 MiB');
+        return data.toString('utf8');
+      }
+      if (method === 8) {
+        try {
+          const xml = zlib.inflateRawSync(data, { maxOutputLength: MAX_XML_BYTES });
+          if (xml.length !== uncompressedSize) throw new Error('Office ZIP entry size does not match its directory');
+          return xml.toString('utf8');
+        } catch (error) {
+          if (error.code === 'ERR_BUFFER_TOO_LARGE') throw new Error('Office metadata XML exceeds 1 MiB');
+          throw error;
+        }
+      }
       throw new Error(`Unsupported ZIP compression method ${method}`);
     }
     ptr += 46 + nameLen + extraLen + commentLen;
