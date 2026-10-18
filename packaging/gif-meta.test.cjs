@@ -28,3 +28,25 @@ test('a plain GIF has no findings', () => {
   assert.deepEqual(sensitive, []);
   assert.ok(!isGif(Buffer.from('GIF80a')));
 });
+
+test('rejects truncated screen descriptors and color tables', () => {
+  assert.throws(() => gifMetadata(gif().subarray(0, 10)), /Truncated GIF logical screen descriptor/);
+  const header = Buffer.concat([
+    Buffer.from('GIF89a', 'latin1'),
+    Buffer.from([2, 0, 3, 0, 0x80, 0, 0]),
+    Buffer.from([0, 0]),
+    Buffer.from([0x3b])
+  ]);
+  assert.throws(() => gifMetadata(header), /Truncated GIF global color table/);
+});
+
+test('rejects incomplete extension and image data blocks', () => {
+  assert.throws(() => gifMetadata(gif(Buffer.from([0x21, 0xfe, 5, 0x41]))), /Truncated GIF sub-block/);
+  assert.throws(() => gifMetadata(gif(Buffer.from([0x2c, 0, 0, 0]))), /Truncated GIF image descriptor/);
+  const unterminated = gif(Buffer.from([0x21, 0xfe, 1, 0x41, 0])).subarray(0, -1);
+  assert.throws(() => gifMetadata(unterminated), /Truncated GIF trailer/);
+});
+
+test('rejects unknown block markers instead of returning partial metadata', () => {
+  assert.throws(() => gifMetadata(gif(Buffer.from([0x7f]))), /Invalid GIF block marker/);
+});
