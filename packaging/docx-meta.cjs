@@ -55,9 +55,16 @@ function xmlValue(xml, tag) {
 
 // &amp; must be decoded last, otherwise "&amp;lt;" (a literal "&lt;") would turn into "<"
 function decodeXml(text) {
+  const decodeCodePoint = (match, digits, radix) => {
+    const point = parseInt(digits, radix);
+    const valid = point === 0x9 || point === 0xa || point === 0xd ||
+      (point >= 0x20 && point <= 0xd7ff) || (point >= 0xe000 && point <= 0xfffd) ||
+      (point >= 0x10000 && point <= 0x10ffff);
+    return valid ? String.fromCodePoint(point) : match;
+  };
   return text
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (match, h) => decodeCodePoint(match, h, 16))
+    .replace(/&#(\d+);/g, (match, d) => decodeCodePoint(match, d, 10))
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
     .replace(/&amp;/g, '&');
 }
