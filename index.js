@@ -50,6 +50,7 @@ const { jpegComments, jpegIptc } = require("./packaging/jpeg-extra.cjs")
 const { isMp3, audioMetadata } = require("./packaging/audio-meta.cjs")
 const { createCooldown, secondsFromEnv } = require("./packaging/cooldown.cjs")
 const { privateByDefault } = require("./packaging/privacy.cjs")
+const { createSlots } = require("./packaging/concurrency.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
@@ -75,6 +76,7 @@ const commands = [
 ].map(c => c.toJSON())
 
 const cooldown = createCooldown(secondsFromEnv(process.env.COOLDOWN_SECONDS, 10) * 1000)
+const metadataSlots = createSlots(2)
 
 const rest = new REST({ version: "10" }).setToken(TOKEN)
 
@@ -120,16 +122,21 @@ async function handleMetadata(interaction) {
     await interaction.reply({ content: "❌ File is larger than 25 MB.", ephemeral: true })
     return
   }
+  const releaseSlot = metadataSlots.tryAcquire()
+  if (!releaseSlot) {
+    await interaction.reply({ content: "⏳ Two file inspections are already running. Please try again shortly.", ephemeral: true })
+    return
+  }
   const wait = cooldown.take(interaction.user.id)
   if (wait > 0) {
+    releaseSlot()
     await interaction.reply({ content: `⏳ Please wait ${Math.ceil(wait / 1000)} s before the next file.`, ephemeral: true })
     return
   }
 
-  // photos can reveal a home address through GPS; let the uploader see that before anyone else does
-  await interaction.deferReply({ ephemeral: privateByDefault(interaction.options.getBoolean("private")) })
-
   try {
+    // photos can reveal a home address through GPS; let the uploader see that before anyone else does
+    await interaction.deferReply({ ephemeral: privateByDefault(interaction.options.getBoolean("private")) })
     // the size Discord reports is checked above; cap the download too in case it differs
     const res = await axios.get(attachment.url, { responseType: "arraybuffer", timeout: 15000, maxContentLength: MAX_BYTES })
     const buffer = Buffer.from(res.data)
@@ -261,6 +268,8 @@ async function handleMetadata(interaction) {
     // parser errors can be very long; Discord rejects messages over 2000 characters
     const reason = String(err.message || err).slice(0, 300)
     await interaction.editReply(`❌ Error: ${reason}`).catch(() => {})
+  } finally {
+    releaseSlot()
   }
 }
 

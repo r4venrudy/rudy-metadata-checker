@@ -53,6 +53,7 @@ Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a 
 
 - The PDF path uses the `pdf-parse` v2 `PDFParse.getInfo()` API and destroys its worker after use. An offline PDF fixture checks document information extraction.
 - The attachment is downloaded into memory (no temporary files) with a 15 second timeout; files over 25 MB are rejected before download.
+- At most two file inspections run at once; additional requests receive a private busy response instead of accumulating large in-memory downloads and parser work.
 - Values from the file are escaped so Discord markdown in an author name or title cannot restyle the reply.
 - Private replies may contain GPS coordinates or author names. A missing EXIF result can mean unsupported parsing or no readable metadata; it does not prove deliberate stripping.
 - This documentation is based on source inspection; authenticated Discord and parser integrations require live validation.
