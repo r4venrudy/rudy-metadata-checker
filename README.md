@@ -47,14 +47,14 @@ Set the `DISCORD_TOKEN` and `CLIENT_ID` environment variables (and optionally `C
 node index.js
 ```
 
-Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a file you are permitted to inspect; add `private:True` to see the result only yourself (useful when a photo may carry a home GPS location).
+Invite it with `bot` and `applications.commands` scopes. Use `/metadata` with a file you are permitted to inspect. Results are private by default because photos and documents can contain GPS coordinates, author names and earlier revisions; set `private:False` only when you intend to share them with the channel.
 
 ## Implementation notes
 
 - The PDF path uses the `pdf-parse` v2 `PDFParse.getInfo()` API and destroys its worker after use. An offline PDF fixture checks document information extraction.
 - The attachment is downloaded into memory (no temporary files) with a 15 second timeout; files over 25 MB are rejected before download.
 - Values from the file are escaped so Discord markdown in an author name or title cannot restyle the reply.
-- Replies are channel-visible and may contain GPS coordinates or author names. A missing EXIF result can mean unsupported parsing or no readable metadata; it does not prove deliberate stripping.
+- Private replies may contain GPS coordinates or author names. A missing EXIF result can mean unsupported parsing or no readable metadata; it does not prove deliberate stripping.
 - This documentation is based on source inspection; authenticated Discord and parser integrations require live validation.
 
 ## Project map

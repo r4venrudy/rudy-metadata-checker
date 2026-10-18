@@ -49,6 +49,7 @@ const { isGif, gifMetadata } = require("./packaging/gif-meta.cjs")
 const { jpegComments, jpegIptc } = require("./packaging/jpeg-extra.cjs")
 const { isMp3, audioMetadata } = require("./packaging/audio-meta.cjs")
 const { createCooldown, secondsFromEnv } = require("./packaging/cooldown.cjs")
+const { privateByDefault } = require("./packaging/privacy.cjs")
 
 const { loadConfig } = require('./packaging/config.cjs')
 const { TOKEN, CLIENT_ID } = loadConfig({ TOKEN:'DISCORD_TOKEN', CLIENT_ID:'CLIENT_ID' })
@@ -69,7 +70,7 @@ const commands = [
     )
     .addBooleanOption(o =>
       o.setName("private")
-        .setDescription("Show the result only to you (default: everyone in the channel)")
+        .setDescription("Keep the result visible only to you (default; false posts in the channel)")
     )
 ].map(c => c.toJSON())
 
@@ -126,7 +127,7 @@ async function handleMetadata(interaction) {
   }
 
   // photos can reveal a home address through GPS; let the uploader see that before anyone else does
-  await interaction.deferReply({ ephemeral: interaction.options.getBoolean("private") ?? false })
+  await interaction.deferReply({ ephemeral: privateByDefault(interaction.options.getBoolean("private")) })
 
   try {
     // the size Discord reports is checked above; cap the download too in case it differs
