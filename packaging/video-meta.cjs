@@ -32,11 +32,12 @@ function movieHeader(buffer, s) {
 
 // "+41.0082+028.9784+035.000/" -> { lat, lon, alt }
 function parseIso6709(text) {
-  const m = /^([+-]\d+(?:\.\d+)?)([+-]\d+(?:\.\d+)?)([+-]\d+(?:\.\d+)?)?/.exec(String(text).trim());
+  const m = /^([+-]\d+(?:\.\d+)?)([+-]\d+(?:\.\d+)?)([+-]\d+(?:\.\d+)?)?\/?$/.exec(String(text).trim());
   if (!m) return null;
   const lat = Number(m[1]), lon = Number(m[2]);
-  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
-  return { lat, lon, alt: m[3] === undefined ? null : Number(m[3]) };
+  const alt = m[3] === undefined ? null : Number(m[3]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180 || (alt !== null && !Number.isFinite(alt))) return null;
+  return { lat, lon, alt };
 }
 
 // QuickTime user data text: 16-bit length, 16-bit language, then the string

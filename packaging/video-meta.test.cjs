@@ -51,5 +51,7 @@ test('handles files without moov and bad ISO 6709 strings', () => {
   assert.match(videoMetadata(ftyp).metadata.Video, /No moov/);
   assert.equal(parseIso6709('hello'), null);
   assert.equal(parseIso6709('+95.0+010.0/'), null);
+  assert.equal(parseIso6709('+41.0+028.0garbage'), null);
+  assert.equal(parseIso6709(`+41.0+028.0+${'9'.repeat(400)}/`), null);
   assert.ok(!isVideo(Buffer.concat([box('ftyp', Buffer.from('heic'), u32(0))])));
 });
