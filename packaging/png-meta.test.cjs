@@ -74,3 +74,12 @@ test('xmpSummary reads GPS in attribute and element form', () => {
   assert.match(elem.GPS, /^-33\.856800, 151\.215300/);
   assert.strictEqual(xmpSummary('<exif:GPSLatitude>junk</exif:GPSLatitude>').GPS, undefined);
 });
+
+test('xmpSummary ignores coordinates outside geographic ranges', () => {
+  for (const xml of [
+    '<exif:GPSLatitude>91,0N</exif:GPSLatitude><exif:GPSLongitude>28,0E</exif:GPSLongitude>',
+    '<exif:GPSLatitude>41,60N</exif:GPSLatitude><exif:GPSLongitude>28,0E</exif:GPSLongitude>',
+    '<exif:GPSLatitude>41,0N</exif:GPSLatitude><exif:GPSLongitude>181,0E</exif:GPSLongitude>',
+    '<exif:GPSLatitude>90,0.1N</exif:GPSLatitude><exif:GPSLongitude>28,0E</exif:GPSLongitude>'
+  ]) assert.strictEqual(xmpSummary(xml).GPS, undefined);
+});

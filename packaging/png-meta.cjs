@@ -17,10 +17,15 @@ function inflateText(data) {
 }
 
 // XMP writes GPS as "41,0.492N" (degrees, decimal minutes) or "41,0,29.52N" (degrees, minutes, seconds)
-function xmpCoordinate(value) {
+function xmpCoordinate(value, maximumDegrees) {
   const m = /^\s*(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?\s*([NSEW])\s*$/i.exec(value || '');
   if (!m) return null;
-  const deg = Number(m[1]) + Number(m[2]) / 60 + Number(m[3] || 0) / 3600;
+  const degrees = Number(m[1]);
+  const minutes = Number(m[2]);
+  const seconds = Number(m[3] || 0);
+  if (minutes >= 60 || seconds >= 60 || degrees > maximumDegrees ||
+      (degrees === maximumDegrees && (minutes !== 0 || seconds !== 0))) return null;
+  const deg = degrees + minutes / 60 + seconds / 3600;
   return /[SW]/i.test(m[4]) ? -deg : deg;
 }
 
@@ -34,8 +39,8 @@ function xmpSummary(xml) {
     Created: grab(/<xmp:CreateDate>([^<]+)<\/xmp:CreateDate>/)
   };
   // Lightroom and Photoshop copy the photo's location into XMP, as an attribute or an element
-  const coord = tag => xmpCoordinate((xml.match(new RegExp(`exif:${tag}(?:="|>)([^"<]+)`)) || [])[1]);
-  const lat = coord('GPSLatitude'), lon = coord('GPSLongitude');
+  const coord = tag => (xml.match(new RegExp(`exif:${tag}(?:="|>)([^"<]+)`)) || [])[1];
+  const lat = xmpCoordinate(coord('GPSLatitude'), 90), lon = xmpCoordinate(coord('GPSLongitude'), 180);
   if (lat !== null && lon !== null) fields.GPS = `${lat.toFixed(6)}, ${lon.toFixed(6)} (https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)})`;
   return Object.fromEntries(Object.entries(fields).filter(([, v]) => v));
 }
