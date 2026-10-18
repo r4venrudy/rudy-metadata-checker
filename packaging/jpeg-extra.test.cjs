@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { jpegComments, jpegIptc } = require('./jpeg-extra.cjs');
+const { jpegComments, jpegIptc, parseIptc } = require('./jpeg-extra.cjs');
 
 function segment(marker, body) {
   const len = Buffer.alloc(2); len.writeUInt16BE(body.length + 2);
@@ -34,4 +34,9 @@ test('files without these segments return nothing', () => {
   const file = Buffer.concat([SOI, segment(0xe0, Buffer.from('JFIF\0')), SOS]);
   assert.deepEqual(jpegComments(file), []);
   assert.deepEqual(jpegIptc(file), {});
+});
+
+test('rejects truncated IPTC data instead of reporting a partial field', () => {
+  const truncated = Buffer.from([0x1c, 2, 80, 0, 10, 65, 66]);
+  assert.throws(() => parseIptc(truncated), /Truncated IPTC dataset/);
 });

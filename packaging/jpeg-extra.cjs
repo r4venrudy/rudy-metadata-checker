@@ -36,6 +36,7 @@ function parseIptc(data) {
     const record = data[pos + 1], dataset = data[pos + 2];
     const len = data.readUInt16BE(pos + 3);
     if (len & 0x8000) break; // extended length datasets are not used for text fields
+    if (pos + 5 + len > data.length) throw new Error('Truncated IPTC dataset');
     const value = data.toString('utf8', pos + 5, pos + 5 + len).trim();
     const name = record === 2 && IPTC_FIELDS[dataset];
     if (name && value) out[name] = out[name] ? `${out[name]}, ${value}` : value;
