@@ -29,6 +29,8 @@ function tiffWithMake() {
 test('isWebp checks the RIFF/WEBP header', () => {
   assert.ok(isWebp(webp()));
   assert.ok(!isWebp(Buffer.from('RIFF\0\0\0\0WAVE', 'latin1')));
+  const truncated = Buffer.from('RIFF\x40\x00\x00\x00WEBP', 'latin1');
+  assert.ok(!isWebp(truncated));
 });
 
 test('webpChunks finds EXIF (with or without the Exif prefix) and XMP, skipping padded chunks', () => {
@@ -43,4 +45,15 @@ test('webpChunks finds EXIF (with or without the Exif prefix) and XMP, skipping 
 test('tiffAsJpeg lets exif-parser read WebP EXIF', () => {
   const tags = exif.create(tiffAsJpeg(tiffWithMake())).parse().tags;
   assert.strictEqual(tags.Make, 'Canon');
+});
+
+test('ignores chunks after the declared RIFF boundary', () => {
+  const file = Buffer.concat([webp(chunk('VP8 ', Buffer.alloc(4))), chunk('EXIF', tiffWithMake())]);
+  assert.deepStrictEqual(webpChunks(file), { exif: null, xmp: null });
+});
+
+test('rejects a chunk whose data exceeds the RIFF boundary', () => {
+  const file = webp(chunk('EXIF', Buffer.from('data')));
+  file.writeUInt32LE(100, 16);
+  assert.throws(() => webpChunks(file), /Truncated WebP chunk/);
 });
