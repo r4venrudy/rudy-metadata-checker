@@ -37,6 +37,23 @@ test('rejects non-PNG data', () => {
   assert.throws(() => pngMetadata(Buffer.from('nope')), /Not a PNG/);
 });
 
+test('rejects truncated PNG chunks instead of returning partial metadata', () => {
+  const file = png(chunk('tEXt', Buffer.from('Author\0Jane')));
+  file.writeUInt32BE(100, 8);
+  assert.throws(() => pngMetadata(file), /Truncated PNG chunk/);
+});
+
+test('rejects unsupported compressed-text flags and incomplete iTXt fields', () => {
+  const badZtxt = chunk('zTXt', Buffer.from('Comment\0\1text'));
+  const badITxtFlags = chunk('iTXt', Buffer.from('Comment\0\2\0en\0\0text'));
+  const badITxtLanguage = chunk('iTXt', Buffer.from('Comment\0\0\0en'));
+  for (const data of [badZtxt, badITxtFlags, badITxtLanguage]) {
+    const type = data.toString('latin1', 4, 8);
+    assert.throws(() => pngMetadata(png(data)), /Invalid PNG/);
+    assert.ok(['zTXt', 'iTXt'].includes(type));
+  }
+});
+
 test('summarizes XMP packets instead of dumping XML', () => {
   const xmp = `<x:xmpmeta><rdf:RDF><rdf:Description><dc:title><rdf:Alt><rdf:li xml:lang='x-default'>Poster v2</rdf:li></rdf:Alt></dc:title></rdf:Description>
     <rdf:Description><pdf:Author>Test Author</pdf:Author></rdf:Description>

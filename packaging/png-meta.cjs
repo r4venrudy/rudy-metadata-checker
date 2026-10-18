@@ -52,6 +52,7 @@ function pngTextChunks(buffer) {
   while (pos + 12 <= buffer.length) {
     const len = buffer.readUInt32BE(pos);
     const type = buffer.toString('latin1', pos + 4, pos + 8);
+    if (len > buffer.length - pos - 12) throw new Error('Truncated PNG chunk');
     const data = buffer.subarray(pos + 8, pos + 8 + len);
     if (type === 'tEXt' || type === 'zTXt' || type === 'iTXt') {
       const nul = data.indexOf(0);
@@ -59,12 +60,20 @@ function pngTextChunks(buffer) {
         const key = data.toString('latin1', 0, nul);
         let value = '';
         if (type === 'tEXt') value = data.toString('latin1', nul + 1);
-        else if (type === 'zTXt') value = inflateText(data.subarray(nul + 2)).toString('latin1');
+        else if (type === 'zTXt') {
+          if (nul + 1 >= data.length || data[nul + 1] !== 0) throw new Error('Invalid PNG zTXt compression method');
+          value = inflateText(data.subarray(nul + 2)).toString('latin1');
+        }
         else {
           // iTXt: keyword\0 compFlag compMethod lang\0 translated\0 text
+          if (nul + 2 >= data.length || data[nul + 1] > 1 || data[nul + 2] !== 0) {
+            throw new Error('Invalid PNG iTXt compression fields');
+          }
           const compressed = data[nul + 1] === 1;
           const langEnd = data.indexOf(0, nul + 3);
+          if (langEnd < 0) throw new Error('Invalid PNG iTXt language field');
           const transEnd = data.indexOf(0, langEnd + 1);
+          if (transEnd < 0) throw new Error('Invalid PNG iTXt translated keyword');
           const text = data.subarray(transEnd + 1);
           value = (compressed ? inflateText(text) : text).toString('utf8');
         }
@@ -85,6 +94,7 @@ function pngExifChunk(buffer) {
   while (pos + 12 <= buffer.length) {
     const len = buffer.readUInt32BE(pos);
     const type = buffer.toString('latin1', pos + 4, pos + 8);
+    if (len > buffer.length - pos - 12) throw new Error('Truncated PNG chunk');
     if (type === 'eXIf') return buffer.subarray(pos + 8, pos + 8 + len);
     if (type === 'IEND') return null; // the spec puts eXIf before IDAT, but some encoders write it after
     pos += 12 + len;
