@@ -11,7 +11,11 @@ function isMp3(buffer) {
   return buffer.length >= 2 && buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0;
 }
 
-const synchsafe = (b, p) => (b[p] << 21) | (b[p + 1] << 14) | (b[p + 2] << 7) | b[p + 3];
+function synchsafe(b, p) {
+  if (p + 4 > b.length || [b[p], b[p + 1], b[p + 2], b[p + 3]].some(v => v & 0x80))
+    throw new Error('Invalid ID3v2 synchsafe size');
+  return b[p] * 0x200000 + b[p + 1] * 0x4000 + b[p + 2] * 0x80 + b[p + 3];
+}
 
 function decodeText(data) {
   const enc = data[0], body = data.subarray(1);
@@ -32,13 +36,27 @@ function decodeText(data) {
 function id3v2(buffer) {
   const out = {};
   const major = buffer[3];
-  const end = Math.min(buffer.length, 10 + synchsafe(buffer, 6));
+  if (major !== 3 && major !== 4) return out; // this reader supports ID3v2.3 and v2.4 frames
+  const end = 10 + synchsafe(buffer, 6);
+  const hasFooter = major === 4 && (buffer[5] & 0x10) !== 0;
+  if (end + (hasFooter ? 10 : 0) > buffer.length) throw new Error('Truncated ID3v2 tag');
+  if (hasFooter && (buffer.toString('latin1', end, end + 3) !== '3DI' || !buffer.subarray(3, 10).equals(buffer.subarray(end + 3, end + 10))))
+    throw new Error('Invalid ID3v2 footer');
   let pos = 10;
-  if (buffer[5] & 0x40) pos += major === 4 ? synchsafe(buffer, 10) : buffer.readUInt32BE(10) + 4; // extended header
+  if (buffer[5] & 0x40) {
+    if (pos + 4 > end) throw new Error('Truncated ID3v2 extended header');
+    const size = major === 4 ? synchsafe(buffer, pos) : buffer.readUInt32BE(pos) + 4;
+    if (size < (major === 4 ? 6 : 10) || pos + size > end) throw new Error('Truncated ID3v2 extended header');
+    pos += size;
+  }
   while (pos + 10 <= end) {
     const id = buffer.toString('latin1', pos, pos + 4);
-    if (!/^[A-Z0-9]{4}$/.test(id)) break; // padding
+    if (!/^[A-Z0-9]{4}$/.test(id)) {
+      if (buffer.subarray(pos, end).every(byte => byte === 0)) break; // padding
+      throw new Error('Invalid ID3v2 frame header');
+    }
     const size = major === 4 ? synchsafe(buffer, pos + 4) : buffer.readUInt32BE(pos + 4);
+    if (size > end - pos - 10) throw new Error('Truncated ID3v2 frame');
     const data = buffer.subarray(pos + 10, pos + 10 + size);
     if (FRAMES[id] && data.length) {
       // COMM: encoding, 3-byte language, short description\0, text
@@ -47,6 +65,8 @@ function id3v2(buffer) {
     }
     pos += 10 + size;
   }
+  if (pos < end && !buffer.subarray(pos, end).every(byte => byte === 0))
+    throw new Error('Truncated ID3v2 frame header');
   return out;
 }
 

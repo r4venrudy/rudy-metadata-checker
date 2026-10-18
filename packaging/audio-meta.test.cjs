@@ -34,6 +34,23 @@ test('reads ID3v2.4 UTF-8 frames with synchsafe sizes', () => {
   assert.strictEqual(audioMetadata(file).metadata.Recorded, '2024-06-01');
 });
 
+test('rejects a truncated ID3 frame instead of returning a partial tag value', () => {
+  const complete = id3(3, [frame('TIT2', latin1('Demo'))]);
+  const truncated = complete.subarray(0, complete.length - 5);
+  assert.throws(() => audioMetadata(truncated), /Truncated ID3v2 (tag|frame)/);
+});
+
+test('reads an ID3v2.4 footer without treating it as a frame', () => {
+  const complete = id3(4, [frame('TIT2', latin1('Footer'), true)]);
+  const bodyEnd = 10 + ((complete[6] << 21) | (complete[7] << 14) | (complete[8] << 7) | complete[9]);
+  const header = Buffer.from(complete.subarray(0, 10));
+  header[5] = 0x10;
+  const footer = Buffer.from(header);
+  footer.write('3DI', 0, 'latin1');
+  const file = Buffer.concat([header, complete.subarray(10, bodyEnd), footer, complete.subarray(bodyEnd)]);
+  assert.strictEqual(audioMetadata(file).metadata.Title, 'Footer');
+});
+
 test('falls back to ID3v1 and reports untagged files', () => {
   const v1 = Buffer.alloc(128); v1.write('TAG', 0, 'latin1'); v1.write('Old Song', 3, 'latin1'); v1.write('Someone', 33, 'latin1');
   const file = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0]), Buffer.alloc(200), v1]);
