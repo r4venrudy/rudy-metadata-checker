@@ -23,10 +23,12 @@ function xmpCoordinate(value, maximumDegrees) {
   const degrees = Number(m[1]);
   const minutes = Number(m[2]);
   const seconds = Number(m[3] || 0);
+  const hemisphere = m[4].toUpperCase();
+  if (maximumDegrees === 90 ? !'NS'.includes(hemisphere) : !'EW'.includes(hemisphere)) return null;
   if (minutes >= 60 || seconds >= 60 || degrees > maximumDegrees ||
       (degrees === maximumDegrees && (minutes !== 0 || seconds !== 0))) return null;
   const deg = degrees + minutes / 60 + seconds / 3600;
-  return /[SW]/i.test(m[4]) ? -deg : deg;
+  return 'SW'.includes(hemisphere) ? -deg : deg;
 }
 
 // XMP is an RDF/XML packet; pull out the handful of fields people care about instead of dumping the XML.

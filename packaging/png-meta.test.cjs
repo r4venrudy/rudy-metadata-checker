@@ -97,6 +97,7 @@ test('xmpSummary ignores coordinates outside geographic ranges', () => {
     '<exif:GPSLatitude>91,0N</exif:GPSLatitude><exif:GPSLongitude>28,0E</exif:GPSLongitude>',
     '<exif:GPSLatitude>41,60N</exif:GPSLatitude><exif:GPSLongitude>28,0E</exif:GPSLongitude>',
     '<exif:GPSLatitude>41,0N</exif:GPSLatitude><exif:GPSLongitude>181,0E</exif:GPSLongitude>',
-    '<exif:GPSLatitude>90,0.1N</exif:GPSLatitude><exif:GPSLongitude>28,0E</exif:GPSLongitude>'
+    '<exif:GPSLatitude>90,0.1N</exif:GPSLatitude><exif:GPSLongitude>28,0E</exif:GPSLongitude>',
+    '<exif:GPSLatitude>41,0E</exif:GPSLatitude><exif:GPSLongitude>28,0N</exif:GPSLongitude>'
   ]) assert.strictEqual(xmpSummary(xml).GPS, undefined);
 });
