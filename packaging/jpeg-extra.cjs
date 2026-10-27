@@ -4,13 +4,17 @@
 // Yields [marker, start, end] for each segment before the image data (SOS)
 function* segments(buffer) {
   let pos = 2;
-  while (pos + 4 <= buffer.length && buffer[pos] === 0xff) {
+  while (pos < buffer.length && buffer[pos] === 0xff) {
+    while (pos + 1 < buffer.length && buffer[pos + 1] === 0xff) pos++; // legal marker fill bytes
+    if (pos + 1 >= buffer.length) throw new Error('Truncated JPEG segment marker');
     const marker = buffer[pos + 1];
     if (marker === 0xda || marker === 0xd9) return; // start of scan / end of image
     if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { pos += 2; continue; } // no length
+    if (pos + 4 > buffer.length) throw new Error('Truncated JPEG segment length');
     const len = buffer.readUInt16BE(pos + 2);
-    if (len < 2) return;
-    yield [marker, pos + 4, Math.min(buffer.length, pos + 2 + len)];
+    if (len < 2) throw new Error('Invalid JPEG segment length');
+    if (pos + 2 + len > buffer.length) throw new Error('Truncated JPEG segment payload');
+    yield [marker, pos + 4, pos + 2 + len];
     pos += 2 + len;
   }
 }

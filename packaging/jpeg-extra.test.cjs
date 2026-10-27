@@ -19,6 +19,16 @@ function photoshop(iptcBlock) {
 const SOI = Buffer.from([0xff, 0xd8]);
 const SOS = Buffer.from([0xff, 0xda, 0, 2]);
 
+test('marker fill bytes do not hide JPEG comments', () => {
+  const file = Buffer.concat([SOI, Buffer.from([0xff, 0xff]), segment(0xfe, Buffer.from('Author: example')), SOS]);
+  assert.deepEqual(jpegComments(file), ['Author: example']);
+});
+
+test('truncated JPEG segments are rejected instead of reporting partial comments', () => {
+  const file = Buffer.concat([SOI, Buffer.from([0xff, 0xfe, 0, 20]), Buffer.from('partial')]);
+  assert.throws(() => jpegComments(file), /Truncated JPEG segment/);
+});
+
 test('reads COM segments', () => {
   const file = Buffer.concat([SOI, segment(0xfe, Buffer.from('CREATOR: gd-jpeg v1.0\0')), SOS]);
   assert.deepEqual(jpegComments(file), ['CREATOR: gd-jpeg v1.0']);
