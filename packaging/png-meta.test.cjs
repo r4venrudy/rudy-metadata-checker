@@ -3,6 +3,12 @@ const assert = require('node:assert');
 const zlib = require('node:zlib');
 const { pngMetadata, xmpSummary } = require('./png-meta.cjs');
 
+test('fractional XMP degrees plus minutes cannot exceed coordinate bounds', () => {
+  for (const [lat, lon] of [['89.9,30N', '28,0E'], ['41,0N', '179.9,30W']]) {
+    assert.strictEqual(xmpSummary(`<exif:GPSLatitude>${lat}</exif:GPSLatitude><exif:GPSLongitude>${lon}</exif:GPSLongitude>`).GPS, undefined);
+  }
+});
+
 function chunk(type, data) {
   const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
   return Buffer.concat([len, Buffer.from(type, 'latin1'), data, Buffer.alloc(4)]); // CRC is not checked

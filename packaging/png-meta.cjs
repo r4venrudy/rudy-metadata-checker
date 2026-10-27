@@ -28,6 +28,7 @@ function xmpCoordinate(value, maximumDegrees) {
   if (minutes >= 60 || seconds >= 60 || degrees > maximumDegrees ||
       (degrees === maximumDegrees && (minutes !== 0 || seconds !== 0))) return null;
   const deg = degrees + minutes / 60 + seconds / 3600;
+  if (deg > maximumDegrees) return null;
   return 'SW'.includes(hemisphere) ? -deg : deg;
 }
 
